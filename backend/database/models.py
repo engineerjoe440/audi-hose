@@ -8,13 +8,11 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from typing import Union
 from uuid import uuid4
 from datetime import datetime
-from enum import Enum
 
 from pydantic import EmailStr
-from pydbantic import DataBaseModel
+from pydbantic import DataBaseModel, PrimaryKey
 
 class Account(DataBaseModel):
     """Single Account."""
@@ -23,8 +21,8 @@ class Account(DataBaseModel):
     email: EmailStr
     hashed_password: str
 
-class RecordingPublicationGroup(DataBaseModel):
-    """Grouping of Accounts to Recieve Notification of a New Recording."""
+class PublicationGroup(DataBaseModel):
+    """Grouping of Accounts to Receive Notification of a New Recording."""
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     name: str
     accounts: list[Account]
@@ -33,7 +31,8 @@ class RecordingPublicationGroup(DataBaseModel):
 class Recording(DataBaseModel):
     """Single Recording Reference."""
     id: str = PrimaryKey(default=lambda: str(uuid4()))
+    time: datetime = datetime.now()
     path: str
     subject_name: str
     email: EmailStr
-    group: RecordingPublicationGroup
+    group: PublicationGroup

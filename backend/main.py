@@ -10,7 +10,6 @@ Author: Joe Stanley
 
 from typing import Annotated
 from pathlib import Path
-from datetime import datetime
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status, Cookie
@@ -18,11 +17,17 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from loguru import logger
 
 try:
-    from backend import __header__
+    from backend import __header__, __version__, api
+    from backend.database import connect_database
+    from backend.sessions import SessionManager
 except ImportError:
-    from __init__ import __header__
+    import api
+    from __init__ import __header__, __version__
+    from database import connect_database
+    from sessions import SessionManager
 
 
 __html_header__ = __header__.replace("\n", r"\n")
@@ -31,6 +36,9 @@ __html_header__ = __header__.replace("\n", r"\n")
 async def lifespan(_: FastAPI):
     """Application Lifespan System."""
     # Setup
+    logger.debug(__header__)
+    # Connect Database
+    _ = await connect_database()
     yield
     # Teardown
 
@@ -43,6 +51,7 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
 )
+app.include_router(api.router)
 
 # Mount the Static File Path
 app.mount(
@@ -55,3 +64,24 @@ app.mount(
 TEMPLATES: Jinja2Templates = Jinja2Templates(
     directory=(Path(__file__).parent/"templates"),
 )
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def root(
+    request: Request,
+    client_token: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Server Root."""
+    if not client_token:
+        client_token = SessionManager.create_session()
+    elif not SessionManager().get_session(client_token=client_token):
+        client_token = SessionManager.create_session()
+    response = TEMPLATES.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "client_token": client_token,
+            "console_app_name": __html_header__,
+        },
+    )
+    response.set_cookie("client_token", client_token)
+    return response

@@ -12,3 +12,4 @@ PyJWT
 bcrypt
 toml-config
 pydbantic[sqlite]==0.0.47
+loguru

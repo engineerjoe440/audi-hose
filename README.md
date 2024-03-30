@@ -1,3 +1,6 @@
+<img src="https://raw.githubusercontent.com/engineerjoe440/audi-hose/main/logo/audihose-logo.png" width="250" alt="logo" align="right">
+
+
 # audi-hose
 FOSS Speakpipe alternative built to connect audiences to the creators they love.
 

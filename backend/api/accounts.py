@@ -15,3 +15,4 @@ from fastapi.responses import Response, RedirectResponse
 
 
 router = APIRouter(prefix="/accounts")
+

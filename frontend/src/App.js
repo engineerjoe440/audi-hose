@@ -1,10 +1,10 @@
-import StockQuote from "./components/StockQuote";
+import RecordButton from "./components/RecordButton";
 
 function App(props) {
 
   return (
     <div>
-      <StockQuote symbol={props.symbol}/>
+      <RecordButton color={props.color}/>
     </div>
   );
 }

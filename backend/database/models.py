@@ -23,9 +23,17 @@ class Account(DataBaseModel):
     email: EmailStr
     hashed_password: str
 
+class RecordingPublicationGroup(DataBaseModel):
+    """Grouping of Accounts to Recieve Notification of a New Recording."""
+    id: str = PrimaryKey(default=lambda: str(uuid4()))
+    name: str
+    accounts: list[Account]
+    description: str = ""
+
 class Recording(DataBaseModel):
     """Single Recording Reference."""
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     path: str
     subject_name: str
     email: EmailStr
+    group: RecordingPublicationGroup

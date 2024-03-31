@@ -16,7 +16,7 @@ export default function AudioDialog(props) {
     audio.src = url;
     audio.controls = true;
     document.getElementById("audihose-dialog-playback").innerHTML = '';
-    document.getElementById("audihose-dialog-playback").appendChild(audio)
+    document.getElementById("audihose-dialog-playback").appendChild(audio);
   };
 
   return (

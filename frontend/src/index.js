@@ -19,7 +19,9 @@ const widgetDivs = document.querySelectorAll('.audihose-recorder-widget');
 widgetDivs.forEach(div => {
     ReactDOM.render(
       <React.StrictMode>
-        <App color={div.dataset.color}/>
+        <App
+          color={div.dataset.color}
+        />
       </React.StrictMode>,
         div
     );

@@ -1,10 +1,19 @@
 <img src="https://raw.githubusercontent.com/engineerjoe440/audi-hose/main/logo/audihose-logo.png" width="250" alt="logo" align="right">
 
-
 # audi-hose
 FOSS Speakpipe alternative built to connect audiences to the creators they love.
 
+## Installation
 
+:warning: TODO
+
+## Setup
+
+:warning: TODO
+
+---
+
+## Development
 
 ### Linking frontend and backend (React/FastAPI):
 With some minor modifications made to the FastAPI configuration,

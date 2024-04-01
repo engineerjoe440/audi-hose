@@ -11,6 +11,9 @@ RUN yarn run build
 # Dockerfile for Audi-Hose
 FROM python:3.12
 
+LABEL org.opencontainers.image.authors="engineerjoe440@yahoo.com"
+LABEL version="0.0.0"
+
 WORKDIR /server
 
 COPY ./backend /server

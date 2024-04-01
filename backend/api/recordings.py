@@ -53,7 +53,7 @@ async def create_new_recording(
     group_id: str,
     email: EmailStr,
     recording: Annotated[bytes, File()]
-):
+) -> str:
     """Create a New Recording."""
     recording_id = str(uuid4())
     # Store the File Contents
@@ -64,9 +64,18 @@ async def create_new_recording(
     # Look Up the Group
     group = await PublicationGroup.get(id=group_id)
     # Record the New Audio Recording in the Database
-    return await Recording.create(
+    await Recording.create(
         id=recording_id,
         subject=subject,
         email=email,
         group=group,
     )
+    return recording_id
+
+@router.post("/notify/{recording_id}")
+async def send_new_data_notification(recording_id: str):
+    """Send the Notification of a New Recording."""
+    recording = await Recording.get(id=recording_id)
+    for account in recording.group.accounts:
+        # Publish Notification for Account
+        ...

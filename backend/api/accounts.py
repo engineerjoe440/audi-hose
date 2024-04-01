@@ -11,9 +11,9 @@ Author: Joe Stanley
 from fastapi import APIRouter
 
 try:
-    from backend.database.models import Account, PublicationGroup
+    from backend.database.models import Account
 except ImportError:
-    from database.models import Account, PublicationGroup
+    from database.models import Account
 
 
 router = APIRouter(prefix="/accounts")
@@ -37,9 +37,3 @@ async def delete_acount(account: Account) -> int:
 async def delete_acount_by_id(account_id: str) -> int:
     """Delete an Account Using Only its ID."""
     return await (await Account.get(id=account_id)).delete()
-
-@router.get("/{account_id}/groups")
-async def get_account_groups(account_id: str) -> list[PublicationGroup]:
-    """Get the List of Publication Groups for the Account."""
-    account = await Account.get(id=account_id)
-    return await PublicationGroup.filter(accounts=Contains(account))

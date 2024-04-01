@@ -11,9 +11,9 @@ Author: Joe Stanley
 from fastapi import APIRouter
 
 try:
-    from backend.database.models import PublicationGroup, Account
+    from backend.database.models import Account, PublicationGroup
 except ImportError:
-    from database.models import PublicationGroup, Account
+    from database.models import Account, PublicationGroup
 
 
 router = APIRouter(prefix="/groups")
@@ -33,17 +33,45 @@ async def modify_existing_group(group: PublicationGroup) -> int:
     """Modify an Existing Publication Group Using the Supplied Data."""
     return await group.update()
 
-@router.patch("/{group_id}")
-async def add_user_ids_to_group(
+@router.get("/account-groups/{account_id}")
+async def get_groups_for_account(account_id: str) -> list[PublicationGroup]:
+    """Get the List of Groups Associated with an Account."""
+    account = await Account.get(id=account_id)
+    return await PublicationGroup.filter(
+        PublicationGroup.contains('accounts', account)
+    )
+
+@router.get("/accounts/{group_id}")
+async def get_accounts_in_group(group_id: str) -> list[Account]:
+    """Get the Accounts Listed for a Publication Group."""
+    return (await PublicationGroup.get(id=group_id)).accounts
+
+@router.put("/accounts/{group_id}")
+async def add_account_to_group(
     group_id: str,
-    new_user_ids: list[str],
+    account: Account
 ) -> int:
-    """Add New Users to a Publication Group by ID."""
+    """Add an Account to a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
-    added_count = 0
-    for new_id in new_user_ids:
-        new_user = await Account.get(id=new_id)
-        if new_user not in group.accounts:
-            group.accounts.append(new_user)
-            added_count += 1
-    return added_count
+    group.accounts.append(account)
+    return await group.update()
+
+@router.post("/accounts/{group_id}")
+async def modify_accounts_in_group(
+    group_id: str,
+    accounts: list[Account],
+) -> int:
+    """Add an Account to a Publication Group."""
+    group = await PublicationGroup.get(id=group_id)
+    group.accounts = accounts
+    return await group.update()
+
+@router.delete("/accounts/{group_id}")
+async def remove_account_from_group(
+    group_id: str,
+    account_id: str
+) -> int:
+    """Remove an Account from a Publication Group."""
+    group = await PublicationGroup.get(id=group_id)
+    del group.accounts[group.accounts.index(account_id)]
+    return await group.update()

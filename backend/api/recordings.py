@@ -8,7 +8,7 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from typing import Annotated
+from typing import Annotated, Optional
 from uuid import uuid4
 
 from fastapi import APIRouter, File
@@ -51,8 +51,8 @@ async def get_single_recording(recording_id: str) -> StreamingResponse:
 async def create_new_recording(
     subject: str,
     group_id: str,
-    email: EmailStr,
-    recording: Annotated[bytes, File()]
+    recording: Annotated[bytes, File()],
+    email: Optional[EmailStr] = None,
 ) -> str:
     """Create a New Recording."""
     recording_id = str(uuid4())

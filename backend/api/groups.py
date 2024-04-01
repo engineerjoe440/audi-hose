@@ -33,13 +33,15 @@ async def modify_existing_group(group: PublicationGroup) -> int:
     """Modify an Existing Publication Group Using the Supplied Data."""
     return await group.update()
 
-@router.get("/account-groups/{account_id}")
+@router.get("/by-account/{account_id}")
 async def get_groups_for_account(account_id: str) -> list[PublicationGroup]:
     """Get the List of Groups Associated with an Account."""
     account = await Account.get(id=account_id)
-    return await PublicationGroup.filter(
-        PublicationGroup.contains('accounts', account)
-    )
+    groups = []
+    for group in await PublicationGroup.all():
+        if account in group.accounts:
+            groups.append(group)
+    return groups
 
 @router.get("/accounts/{group_id}")
 async def get_accounts_in_group(group_id: str) -> list[Account]:
@@ -50,28 +52,39 @@ async def get_accounts_in_group(group_id: str) -> list[Account]:
 async def add_account_to_group(
     group_id: str,
     account: Account
-) -> int:
+):
     """Add an Account to a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     group.accounts.append(account)
-    return await group.update()
+    await group.update()
+
+@router.patch("/accounts/{group_id}")
+async def add_account_id_to_group(
+    group_id: str,
+    account_id: str,
+):
+    """Add an Account to a Publication Group."""
+    group = await PublicationGroup.get(id=group_id)
+    account = await Account.get(id=account_id)
+    group.accounts.append(account)
+    await group.update()
 
 @router.post("/accounts/{group_id}")
 async def modify_accounts_in_group(
     group_id: str,
     accounts: list[Account],
-) -> int:
+):
     """Add an Account to a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     group.accounts = accounts
-    return await group.update()
+    await group.update()
 
 @router.delete("/accounts/{group_id}")
 async def remove_account_from_group(
     group_id: str,
     account_id: str
-) -> int:
+):
     """Remove an Account from a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     del group.accounts[group.accounts.index(account_id)]
-    return await group.update()
+    await group.update()

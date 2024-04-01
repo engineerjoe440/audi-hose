@@ -13,6 +13,7 @@ export default function App(props) {
     <div>
       <RecordButton
         color={props.color}
+        prompt={props.prompt}
         onClick={() => {setOpen(true)}}
       />
       <AudioDialog

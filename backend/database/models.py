@@ -32,7 +32,6 @@ class Recording(DataBaseModel):
     """Single Recording Reference."""
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     time: datetime = datetime.now()
-    path: str
-    subject_name: str
+    subject: str
     email: EmailStr
     group: PublicationGroup

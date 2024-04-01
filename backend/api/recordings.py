@@ -8,13 +8,19 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from fastapi import APIRouter
+from typing import Annotated
+from uuid import uuid4
+
+from fastapi import APIRouter, File
 from fastapi.responses import StreamingResponse
+from pydantic import EmailStr
 
 try:
-    from backend.database.models import Recording
+    from backend.database.models import Recording, PublicationGroup
+    from backend.configuration import ConfigReader
 except ImportError:
-    from database.models import Recording
+    from database.models import Recording, PublicationGroup
+    from configuration import ConfigReader
 
 
 router = APIRouter(prefix="/recordings")
@@ -45,6 +51,25 @@ async def get_recording_by_path(recording_path: str) -> StreamingResponse:
     return StreamingResponse(inner_iter(), media_type="audio/mp3")
 
 @router.put("/")
-async def create_new_recording(new_recording: Recording) -> int:
+async def create_new_recording(
+    subject: str,
+    group_id: str,
+    email: EmailStr,
+    recording: Annotated[bytes, File()]
+):
     """Create a New Recording."""
-    return await new_recording.insert()
+    recording_id = str(uuid4())
+    # Store the File Contents
+    config = ConfigReader().set_attributes()
+    file_path = config.recordings_file_path / f"{recording_id}.wav"
+    with open(file_path, 'wb') as dst_file_obj:
+        dst_file_obj.write(recording)
+    # Look Up the Group
+    group = await PublicationGroup.get(id=group_id)
+    # Record the New Audio Recording in the Database
+    return await Recording.create(
+        id=recording_id,
+        subject=subject,
+        email=email,
+        group=group,
+    )

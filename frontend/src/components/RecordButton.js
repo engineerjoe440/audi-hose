@@ -32,7 +32,7 @@ export default function RecordButton(props) {
           }}
           startIcon={<MicrophoneSvg />}
         >
-          <span>Record</span>
+          <span>{!!props.prompt ? props.prompt : "Record"}</span>
         </Button>
       </div>
     );

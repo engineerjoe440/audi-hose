@@ -10,9 +10,8 @@ Authors:
 """
 ################################################################################
 
-from typing import Any, Union
 import os
-import logging
+from typing import Any, Union
 from pathlib import Path
 
 import requests
@@ -40,6 +39,7 @@ class ConfigurationData(object):
     """Base Configuration Data for Application."""
     # Generic Configuration Values
     site_url: str
+    _recordings_file_path: str
     # Email Settings
     smtp_server: str
     smtp_port: int
@@ -57,16 +57,18 @@ class ConfigurationData(object):
 class ConfigReader(ConfigurationData):
     """Read-Only Configuration Object."""
     _config: Config
-    _logger: logging.Logger
 
     def __init__(self):
         """Initialize the Configuration."""
         CONFIG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
         self._config = Config(str(CONFIG_FILE_PATH))
-        self._logger = None
         # Generic Information
         self._config.add_section('Generic').set(
             site_url=os.getenv("SITE_URL", ""),
+            recordings_file_path=os.getenv(
+                "RECORDINGS_PATH",
+                "./recordings/"
+            ),
         )
         # Email Configuration
         self._config.add_section('Email').set(
@@ -90,11 +92,23 @@ class ConfigReader(ConfigurationData):
             ntfy_auth_token=os.getenv("NTFY_AUTH_TOKEN", ""),
         )
 
-    def set_attributes(self):
+    def set_attributes(self) -> "ConfigReader":
         """Load Class Attributes."""
         for _, data in self._config.config.items():
             for key, value in data.items():
-                self.__dict__[key] = value
+                # Custom Attribute for File Path
+                if key == "recordings_file_path":
+                    self.__dict__["_recordings_file_path"] = value
+                else:
+                    self.__dict__[key] = value
+        return self
+
+    @property
+    def recordings_file_path(self) -> Path:
+        """Evaluate the Path Object for the Recordings File Path."""
+        path = Path(self._recordings_file_path)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
     def ntfy(
         self,
@@ -131,6 +145,8 @@ class ConfigManager(ConfigReader):
         super().__init__()
         # Load the Configuration into Class Attributes
         self.set_attributes()
+        # Verify Path Exists
+        _ = self.recordings_file_path
 
     @property
     def config(self):

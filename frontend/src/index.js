@@ -21,6 +21,7 @@ widgetDivs.forEach(div => {
       <React.StrictMode>
         <App
           color={div.dataset.color}
+          prompt={div.dataset.prompt}
         />
       </React.StrictMode>,
         div

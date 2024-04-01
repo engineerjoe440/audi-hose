@@ -1,23 +1,39 @@
 import * as React from 'react';
 import {
   Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
-  Grid, IconButton, TextField
+  Grid, TextField
 } from '@mui/material';
-import PlayCircleIcon from '@mui/icons-material/PlayCircle';
-import PauseCircleIcon from '@mui/icons-material/PauseCircle';
+import axios from "axios";
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
 export default function AudioDialog(props) {
-  const [playing, setPlaying] = React.useState(false);
-  
+  const audio = document.createElement('audio');
+
   const addAudioElement = (blob) => {
     const url = URL.createObjectURL(blob);
-    const audio = document.createElement('audio');
     audio.src = url;
     audio.controls = true;
     document.getElementById("audihose-dialog-playback").innerHTML = '';
     document.getElementById("audihose-dialog-playback").appendChild(audio);
   };
+
+  const submitAudio = (event) => {
+    // Set Up and Submit the Audio File
+    const formData = new FormData();
+    formData.append('recording', audio);
+    axios({
+      url: "http://localhost:8000/api/v1/recordings/?subject=test&email=admin%40example.com&group_id=cd40d5ee-5520-42d2-8af3-078a888e6974",
+      method: 'put',
+      data: formData,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'multipart/form-data'
+      },
+    }).then(response=>{console.log(response)}).catch(error=>{console.log(error)});
+
+    // Close the Dialog
+    props.onClose(event);
+  }
 
   return (
     <React.Fragment>
@@ -82,7 +98,7 @@ export default function AudioDialog(props) {
         </DialogContent>
         <DialogActions>
           <Button onClick={props.onClose}>Cancel</Button>
-          <Button onClick={props.onClose}>Submit</Button>
+          <Button onClick={submitAudio}>Submit</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>

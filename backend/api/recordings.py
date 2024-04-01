@@ -30,6 +30,12 @@ async def get_all_recordings() -> list[Recording]:
     """Get the List of all Recordings."""
     return await Recording.all()
 
+@router.get("/group/{group_id}")
+async def get_recordings_by_group(group_id: str) -> list[Recording]:
+    """Get the Recordings by Group ID."""
+    group = await PublicationGroup.get(id=group_id)
+    return await Recording.get(group=group)
+
 @router.get("/{recording_id}")
 async def get_single_recording(recording_id: str) -> StreamingResponse:
     """Get a Single Recording's Audio File."""
@@ -37,15 +43,6 @@ async def get_single_recording(recording_id: str) -> StreamingResponse:
 
     def inner_iter():
         with open(recording.path, 'rb') as audio_file:
-            yield from audio_file
-
-    return StreamingResponse(inner_iter(), media_type="audio/mp3")
-
-@router.get("/by-path/")
-async def get_recording_by_path(recording_path: str) -> StreamingResponse:
-    """Get a Single Recording's Audio File."""
-    def inner_iter():
-        with open(recording_path, 'rb') as audio_file:
             yield from audio_file
 
     return StreamingResponse(inner_iter(), media_type="audio/mp3")

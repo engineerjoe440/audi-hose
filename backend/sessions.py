@@ -11,7 +11,6 @@ Author: Joe Stanley
 
 from typing import Union
 from uuid import uuid4
-from tempfile import TemporaryDirectory
 from datetime import datetime, timedelta
 
 
@@ -21,7 +20,6 @@ ALLOWED_INACTIVITY_PERIOD = timedelta(minutes=30)
 class UserSession:
     """Control Object for a Single Client Instance."""
     client_token: str
-    temp_directory: TemporaryDirectory
     last_access: datetime
     _image_bytes: bytes
 

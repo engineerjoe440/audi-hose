@@ -8,8 +8,10 @@ import { AudioRecorder } from 'react-audio-voice-recorder';
 
 export default function AudioDialog(props) {
   const audio = document.createElement('audio');
+  const [audioBlob, setAudioBlob] = React.useState(null);
 
   const addAudioElement = (blob) => {
+    setAudioBlob(blob.slice());
     const url = URL.createObjectURL(blob);
     audio.src = url;
     audio.controls = true;
@@ -20,11 +22,16 @@ export default function AudioDialog(props) {
   const submitAudio = (event) => {
     // Set Up and Submit the Audio File
     const formData = new FormData();
-    formData.append('recording', audio);
+    formData.append('recording', audioBlob);
     axios({
-      url: "http://localhost:8000/api/v1/recordings/?subject=test&email=admin%40example.com&group_id=cd40d5ee-5520-42d2-8af3-078a888e6974",
+      url: "http://localhost:8000/api/v1/recordings/",
       method: 'put',
       data: formData,
+      params: {
+        subject: 'test',
+        email: 'admin@example.com',
+        group_id: 'c95d8a76-528c-48cc-96cc-93770cc1cbb9'
+      },
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'multipart/form-data'

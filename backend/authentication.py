@@ -170,6 +170,9 @@ async def perform_login(
                         "session": client_session.client_token,
                     })
                     response.message = None
+                    # Set Session Parameters
+                    client_session.email = email
+                    client_session.account_id = account.id
     except ValueError as err:
         response.message = (
             f"Server failure: '{err}'\n"
@@ -200,12 +203,15 @@ async def refresh_token(
     client_token: Annotated[str | None, Cookie()] = None
 ) -> TokenResponse:
     """Refresh the JSON Web Token for an Authenticated admin User."""
-    zsuite_email = "admin"
+    token = TokenResponse()
     if client_token:
         session = get_session(client_token=client_token)
-        zsuite_email = session.zsuite_account_email
-    token = TokenResponse()
-    token.token = sign_jwt({"zsuite-email": zsuite_email})
+        if session:
+            token.token = sign_jwt({
+                "email": session.email,
+                "id": session.account_id,
+                "session": session.client_token,
+            })
     return token
 
 @router.post("/logout", dependencies=[Depends(JWTBearer())])

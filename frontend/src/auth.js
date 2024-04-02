@@ -10,6 +10,20 @@ baseURL.pathname = "/api/v1";
 
 export const api_client = axios.create({baseURL: baseURL.href});
 
+const TOKEN_NAME = 'audi-hose-token';
+
+export const setToken = (token) => {
+   localStorage.setItem(TOKEN_NAME, token);
+}
+ 
+export const fetchToken = () => {
+   return localStorage.getItem(TOKEN_NAME);
+}
+
+export const clearToken = () => {
+   localStorage.removeItem(TOKEN_NAME);
+}
+
 export function refreshTokenCall({
   redirect=true,
 }) {
@@ -18,21 +32,21 @@ export function refreshTokenCall({
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${window.session_auth}`,
-      'Cookie': `client_token=${window.session_token}`,
+      'Authorization': `Bearer ${fetchToken()}`,
+      'Cookie': `client_token=${window.client_token}`,
     },
     body: '{}',
   }).then(res => {
     if ( res.status === 401 ){
       // Timed Out? Goodbye! Go back to start.
-      window.session_auth = null;
+      clearToken();
       if (redirect) {
         window.location.href = "/login";
       }
       console.log(res.data);
     } else if ( res.status === 403 ) {
       // Timed Out? Goodbye! Go back to start.
-      window.session_auth = null;
+      clearToken();
       if (redirect) {
         window.location.href = "/login";
       }
@@ -40,14 +54,14 @@ export function refreshTokenCall({
     } else {
       res.json().then(jsonData => {
         // Store the Updated Token
-        window.session_auth = jsonData.token;
+        setToken(jsonData.token);
       })
     }
   }).catch((error) => {
     if (error.response.status === 401 ){
-        window.session_auth = null;
+        clearToken();
     } else if (error.response.status === 403 ){
-        window.session_auth = null;
+        clearToken();
     }
     if( error.response ){
       console.log(error.response.data); // => the response payload
@@ -65,18 +79,18 @@ export function logout() {
     headers: {
       'Accept': 'application/json',
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${window.session_auth}`,
-      'Cookie': `client_token=${window.session_token}`,
+      'Authorization': `Bearer ${fetchToken()}`,
+      'Cookie': `client_token=${window.client_token}`,
     },
     body: '{}'
   }).then(res => {
-    window.session_auth = null;
-    window.location.href = "/login";
+    clearToken();
+    window.location.href = "/";
   }).catch((error) => {
     if (error.response.status === 401 ){
-        window.session_auth = null;
+        clearToken();
     } else if (error.response.status === 403 ){
-        window.session_auth = null;
+        clearToken();
     }
     if( error.response ){
       console.log(error.response.data); // => the response payload
@@ -87,8 +101,8 @@ export function logout() {
 }
 
 api_client.interceptors.request.use((config) => {
-  config.headers.Authorization = `Bearer ${window.session_auth}`;
-  config.headers.Cookie = `client_token=${window.session_token}`;
+  config.headers.Authorization = `Bearer ${fetchToken()}`;
+  config.headers.Cookie = `client_token=${window.client_token}`;
   return config;
 }, (error) => {
   return Promise.reject(error);
@@ -104,7 +118,7 @@ api_client.interceptors.response.use((response) => {
 export function RequireToken({children}){
  
    refreshTokenCall({redirect: true});
-   let auth = window.session_auth;
+   let auth = fetchToken();
    let location = useLocation()
 
    if (!auth) {

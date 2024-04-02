@@ -10,7 +10,7 @@ import { Paper } from '@mui/material';
 
 
 export const PageSection = styled(Paper)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? '#1A2027' : '#fff',
+  backgroundColor: theme.palette.mode === 'dark' ? '#011E2A' : '#d7f3ff',
   ...theme.typography.body2,
   padding: theme.spacing(1),
   textAlign: 'center',
@@ -27,31 +27,35 @@ export const getDesignTokens = (mode) => ({
         ? {
             // palette values for light mode
            primary: {
-             main: green[800],
-             text: '#ffffff',
+             main: '#015C68',
+             text: '#FFFFFF',
            },
            secondary: {
-             main: green[800],
-             alt: '#ffffff',
+             main: '#015C68',
+             alt: '#d7f3ff',
              altTable: "#eaebea",
-             text: green[800],
+             text: '#d7f3ff',
            },
+           background: {
+              default: '#d7f3ff',
+              paper: '#015C68',
+            },
         }
         : {
             // palette values for dark mode
            primary: {
-             main: green[800],
+             main: '#5edaf0',
              text: '#ffffff',
            },
            secondary: {
              main: "#ffffff",
-             alt: green[100],
+             alt: '#d7f3ff',
              altTable: "#3f7c42",
-             text: "#000000",
+             text: "#ffffff",
            },
            background: {
-              default: '#051700',
-              paper: green[800],
+              default: '#011E2A',
+              paper: '#015C68',
             },
         },
     },

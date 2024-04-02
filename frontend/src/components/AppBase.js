@@ -6,6 +6,9 @@ import { getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "../theme"
 import CssBaseline from '@mui/material/CssBaseline';
 import AdminAppBar from './AdminAppBar';
 import { Toaster } from 'react-hot-toast';
+import AdminAppDrawer from './AdminAppDrawer';
+
+const drawerWidth = 180;
 
 export default function AppBase({bannerTitle, children}) {
   const [pageLoadComplete, setPageLoadComplete] = React.useState(false);
@@ -42,22 +45,26 @@ export default function AppBase({bannerTitle, children}) {
 
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <div className="AppBase">
-        <Toaster
-          position="bottom-right"
-          reverseOrder={false}
-        />
-        <AdminAppBar
-            title={bannerTitle}
-            mode={mode}
-            onLoad={setDefaultTheme}
-            onThemeChange={toggleThemeSetting}
-        />
-        <Box m={2} sx={{ flexGrow: 1 }}>
-          {children}
-        </Box>
-      </div>
+      <Box sx={{ display: 'flex' }}>
+        <CssBaseline />
+        <div className="AppBase">
+          <Toaster
+            position="bottom-right"
+            reverseOrder={false}
+          />
+          <Box sx={{ display: 'flex' }}>
+            <AdminAppBar
+                title={bannerTitle}
+                mode={mode}
+                onLoad={setDefaultTheme}
+                onThemeChange={toggleThemeSetting}
+            />
+            <AdminAppDrawer drawerWidth={drawerWidth}>
+              {children}
+            </AdminAppDrawer>
+          </Box>
+        </div>
+      </Box>
     </ThemeProvider>
   );
 }

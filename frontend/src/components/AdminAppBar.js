@@ -20,6 +20,37 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Tooltip from '@mui/material/Tooltip';
 import Link from '@mui/material/Link';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { clearToken, logout } from '../auth';
+
+function stringToColor(string) {
+  let hash = 0;
+  let i;
+
+  /* eslint-disable no-bitwise */
+  for (i = 0; i < string.length; i += 1) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  let color = '#';
+
+  for (i = 0; i < 3; i += 1) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += `00${value.toString(16)}`.slice(-2);
+  }
+  /* eslint-enable no-bitwise */
+
+  return color;
+}
+
+function stringAvatar(name) {
+  return {
+    sx: {
+      bgcolor: stringToColor(name),
+      color: '#fff',
+    },
+    children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
+  };
+}
 
 export default function AdminAppBar({
   title,
@@ -66,13 +97,14 @@ export default function AdminAppBar({
   
   const handleLogout = () => {
     handleCloseUserMenu();
-    window.session_auth = null;
+    logout();
+    clearToken();
     window.location.href = "/";
   }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
           <IconButton
             id="menu-button"
@@ -120,7 +152,7 @@ export default function AdminAppBar({
             <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="User Profile" src="/api/v1/user/profile" />
+                <Avatar {...stringAvatar(`${window.account_name}`)} />
               </IconButton>
             </Tooltip>
             <Menu

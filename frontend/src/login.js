@@ -22,7 +22,7 @@ import {
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getDesignTokens, getSavedThemeMode } from "./theme";
-import { refreshTokenCall } from './auth';
+import { fetchToken, setToken, refreshTokenCall } from './auth';
 import axios from "axios";
 
 const client = axios.create({
@@ -51,8 +51,9 @@ export default function LoginPortal() {
 
   React.useEffect(()=>{
     // Redirect if Auth is Valid
-    if (!!window.session_auth){
-      window.location.href = "/select-account";
+    refreshTokenCall({redirect: false});
+    if (!!fetchToken()){
+      window.location.href = "/";
     }
   },[]);
 
@@ -64,17 +65,17 @@ export default function LoginPortal() {
     client.post("login", {
       email: data.get('email'),
       password: data.get('password'),
-      client_token: window.session_token,
+      client_token: window.client_token,
     }).then((response) => {
       console.log(response);
       if (response.data.message !== null) {
         setLoginAlert(response.data.message);
       } else if (response.data.token !== null) {
-        window.session_auth = response.data.token;
+        setToken(response.data.token);
         setLoginAlert("");
 
         // Redirect to Admin
-        window.location.href = "/select-account";
+        window.location.href = "/";
       }
     })
     .catch((error) => {
@@ -140,7 +141,7 @@ export default function LoginPortal() {
               <LockOutlinedIcon />
             </Avatar>
             <Typography component="h1" variant="h6">
-              Connecting audiences to the creators they love with easy audio.
+              Connecting audiences to the creators they love.
             </Typography>
             {loginAlert.length > 0 &&
               <Alert severity="error">

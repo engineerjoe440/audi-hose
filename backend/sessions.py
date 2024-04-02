@@ -114,3 +114,8 @@ def get_session(client_token: str) -> Union[UserSession, None]:
     """Get a Session from the Global Reference Without the Manager."""
     temp_manager = SessionManager()
     return temp_manager.get_session(client_token=client_token)
+
+def close_session(client_token: str) -> Union[UserSession, None]:
+    """Get a Session from the Global Reference Without the Manager."""
+    temp_manager = SessionManager()
+    return temp_manager.close_session(client_token=client_token)

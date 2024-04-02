@@ -1,13 +1,13 @@
-/* GrantSplat Landing Page. */
+/* App Landing Page. */
 import * as React from 'react';
 import { Box } from "@mui/material";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "./theme";
+import { getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "../theme";
 import CssBaseline from '@mui/material/CssBaseline';
-import AdminAppBar from './components/AdminAppBar';
+import AdminAppBar from './AdminAppBar';
 import { Toaster } from 'react-hot-toast';
 
-export default function GrantSplatApp({bannerTitle, children}) {
+export default function AppBase({bannerTitle, children}) {
   const [pageLoadComplete, setPageLoadComplete] = React.useState(false);
   const [mode, setMode] = React.useState(getSavedThemeMode());
   const [theme, setTheme] = React.useState(createTheme(getDesignTokens(mode)));
@@ -43,7 +43,7 @@ export default function GrantSplatApp({bannerTitle, children}) {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <div className="Audi-Hose-App">
+      <div className="AppBase">
         <Toaster
           position="bottom-right"
           reverseOrder={false}
@@ -61,4 +61,3 @@ export default function GrantSplatApp({bannerTitle, children}) {
     </ThemeProvider>
   );
 }
-

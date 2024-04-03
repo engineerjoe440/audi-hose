@@ -13,15 +13,15 @@ from typing import Annotated
 from pathlib import Path
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status, Cookie
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi import FastAPI, Request, Cookie
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from loguru import logger
 
 try:
     from backend import __header__, __version__, api, authentication
+    from backend.configuration import ConfigReader
     from backend.database import connect_database
     from backend.database.models import Account
     from backend.sessions import SessionManager, get_session
@@ -29,6 +29,7 @@ except ImportError:
     import api
     import authentication
     from __init__ import __header__, __version__
+    from configuration import ConfigReader
     from database import connect_database
     from database.models import Account
     from sessions import SessionManager, get_session
@@ -133,6 +134,8 @@ async def app_base(
 @app.exception_handler(Exception)
 async def validation_exception_handler(request: Request, exc: Exception):
     """Global Exception-Handling Middleware - Reports Errors where Needed."""
+    config = ConfigReader()
+    config.set_attributes()
     # Attempt Identification of the Client User
     try:
         client_token = request.cookies.get(APP_COOKIE_NAME)
@@ -141,16 +144,16 @@ async def validation_exception_handler(request: Request, exc: Exception):
     except (AttributeError, KeyError):
         email_desc = ""
     # Alert Subscribers to the Exception
-    # api.config.ntfy(
-    #     message=(
-    #         f"Failed HTTP Method: {request.method} at URL: {request.url}.\n"
-    #         f"{email_desc}Exception Message: {exc!r}"
-    #     ),
-    #     title="ScrapbookZ Failure",
-    #     priority="urgent",
-    #     tags=["warning", "skull"]
-    # )
-    # if email_desc:
-    #     api.config.logger.error("User Encountered Error -- %s", email_desc)
-    # api.config.logger.exception(exc)
+    config.ntfy(
+        message=(
+            f"Failed HTTP Method: {request.method} at URL: {request.url}.\n"
+            f"{email_desc}Exception Message: {exc!r}"
+        ),
+        title="AudiHose Failure",
+        priority="urgent",
+        tags=["warning", "skull"]
+    )
+    if email_desc:
+        logger.error("User Encountered Error -- %s", email_desc)
+    logger.exception(exc)
     raise exc

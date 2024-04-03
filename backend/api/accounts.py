@@ -8,15 +8,19 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Cookie
 from pydantic import BaseModel, EmailStr
 
 try:
     from backend.database.models import Account
     from backend.authentication import get_hashed_password
+    from backend.sessions import get_session
 except ImportError:
     from database.models import Account
     from authentication import get_hashed_password
+    from sessions import get_session
 
 
 router = APIRouter(prefix="/accounts")
@@ -31,6 +35,15 @@ class NewAccountData(BaseModel):
 async def get_all_accounts() -> list[Account]:
     """Get the List of all User Accounts."""
     return await Account.all()
+
+@router.get("/me")
+async def get_my_account(
+    client_token: Annotated[str | None, Cookie()] = None,
+) -> Account:
+    """Get the List of all User Accounts."""
+    session = get_session(client_token=client_token)
+    if session:
+        return await Account.get(id=session.account_id)
 
 @router.put("/")
 async def add_new_account(new_account: Account) -> int:

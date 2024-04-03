@@ -56,7 +56,7 @@ async def add_account_to_group(
     """Add an Account to a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     group.accounts.append(account)
-    await group.update()
+    await group.save()
 
 @router.patch("/accounts/{group_id}")
 async def add_account_id_to_group(
@@ -67,7 +67,8 @@ async def add_account_id_to_group(
     group = await PublicationGroup.get(id=group_id)
     account = await Account.get(id=account_id)
     group.accounts.append(account)
-    await group.update()
+    print(group.accounts)
+    await group.save()
 
 @router.post("/accounts/{group_id}")
 async def modify_accounts_in_group(
@@ -77,7 +78,7 @@ async def modify_accounts_in_group(
     """Add an Account to a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     group.accounts = accounts
-    await group.update()
+    await group.save()
 
 @router.delete("/accounts/{group_id}")
 async def remove_account_from_group(
@@ -87,4 +88,4 @@ async def remove_account_from_group(
     """Remove an Account from a Publication Group."""
     group = await PublicationGroup.get(id=group_id)
     del group.accounts[group.accounts.index(account_id)]
-    await group.update()
+    await group.save()

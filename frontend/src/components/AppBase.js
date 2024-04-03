@@ -7,17 +7,38 @@ import CssBaseline from '@mui/material/CssBaseline';
 import AdminAppBar from './AdminAppBar';
 import { Toaster } from 'react-hot-toast';
 import AdminAppDrawer from './AdminAppDrawer';
+import { api_client, fetchToken } from '../auth';
 
-const drawerWidth = 180;
+const drawerWidth = 220;
 
 export default function AppBase({bannerTitle, children}) {
+  const [myAccount, setMyAccount] = React.useState(null);
   const [pageLoadComplete, setPageLoadComplete] = React.useState(false);
   const [mode, setMode] = React.useState(getSavedThemeMode());
   const [theme, setTheme] = React.useState(createTheme(getDesignTokens(mode)));
 
   React.useEffect(()=>{
     // Load Requisites when page Completes
+    getAccount();
   },[]);
+
+  const getAccount = () => {
+    api_client.get("accounts/me", {
+      withCredentials: true,
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${fetchToken()}`
+      },
+    }).then(res => res.data).then(jsonData => {
+      // Record the Active Account
+      setMyAccount(jsonData);
+    })
+    .catch((error) => {
+      if( error.response ){
+        console.log(error.response.data); // => the response payload
+      }
+    });
+  }
 
   // Theme Default Setter
   const setDefaultTheme = (themePreference) => {
@@ -59,7 +80,7 @@ export default function AppBase({bannerTitle, children}) {
                 onLoad={setDefaultTheme}
                 onThemeChange={toggleThemeSetting}
             />
-            <AdminAppDrawer drawerWidth={drawerWidth}>
+            <AdminAppDrawer drawerWidth={drawerWidth} account={myAccount}>
               {children}
             </AdminAppDrawer>
           </Box>

@@ -11,25 +11,18 @@ Author: Joe Stanley
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie
-from pydantic import BaseModel, EmailStr
 
 try:
-    from backend.database.models import Account
-    from backend.authentication import get_hashed_password
+    from backend.database.models import Account, Login, NewAccountData
+    from backend.security import get_hashed_password
     from backend.sessions import get_session
 except ImportError:
-    from database.models import Account
-    from authentication import get_hashed_password
+    from database.models import Account, Login, NewAccountData
+    from security import get_hashed_password
     from sessions import get_session
 
 
 router = APIRouter(prefix="/accounts")
-
-class NewAccountData(BaseModel):
-    """Data Required for a New Account."""
-    name: str
-    email: EmailStr
-    password: str
 
 @router.get("/")
 async def get_all_accounts() -> list[Account]:
@@ -56,6 +49,9 @@ async def create_new_account(account_data: NewAccountData) -> str:
     new_account = await Account.create(
         name=account_data.name,
         email=account_data.email,
+    )
+    await Login.create(
+        id=new_account.id,
         hashed_password=get_hashed_password(account_data.password),
     )
     return new_account.id
@@ -63,9 +59,11 @@ async def create_new_account(account_data: NewAccountData) -> str:
 @router.delete("/")
 async def delete_acount(account: Account) -> int:
     """Delete an Account."""
+    await (await Login.get(id=account.id)).delete()
     return await account.delete()
 
 @router.delete("/{account_id}")
 async def delete_acount_by_id(account_id: str) -> int:
     """Delete an Account Using Only its ID."""
+    await (await Login.get(id=account_id)).delete()
     return await (await Account.get(id=account_id)).delete()

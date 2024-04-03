@@ -105,6 +105,7 @@ async def root(
     return response
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/sign-up", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/component", response_class=HTMLResponse, include_in_schema=False)
 async def app_base(
     request: Request,

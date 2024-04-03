@@ -79,13 +79,13 @@ export default function AdminAppDrawer(props) {
         <Divider />
         <List>
           <ListItem key={"accounts"} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={() => {props.onNavigate("Accounts")}}>
               <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary={"Accounts"} />
             </ListItemButton>
           </ListItem>
           <ListItem key={"groups"} disablePadding>
-            <ListItemButton>
+            <ListItemButton onClick={() => {props.onNavigate("Groups")}}>
               <ListItemIcon><AllInboxIcon /></ListItemIcon>
               <ListItemText primary={"Groups"} />
             </ListItemButton>

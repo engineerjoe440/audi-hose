@@ -11,7 +11,7 @@ import { api_client, fetchToken } from '../auth';
 
 const drawerWidth = 220;
 
-export default function AppBase({bannerTitle, children}) {
+export default function AppBase({bannerTitle, onNavigate, children}) {
   const [myAccount, setMyAccount] = React.useState(null);
   const [pageLoadComplete, setPageLoadComplete] = React.useState(false);
   const [mode, setMode] = React.useState(getSavedThemeMode());
@@ -80,7 +80,11 @@ export default function AppBase({bannerTitle, children}) {
                 onLoad={setDefaultTheme}
                 onThemeChange={toggleThemeSetting}
             />
-            <AdminAppDrawer drawerWidth={drawerWidth} account={myAccount}>
+            <AdminAppDrawer
+              drawerWidth={drawerWidth}
+              account={myAccount}
+              onNavigate={onNavigate}
+            >
               {children}
             </AdminAppDrawer>
           </Box>

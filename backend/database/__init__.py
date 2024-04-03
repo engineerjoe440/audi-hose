@@ -13,9 +13,13 @@ from pathlib import Path
 from pydbantic import Database
 
 try:
-    from backend.database.models import Account, Recording, PublicationGroup
+    from backend.database.models import (
+        Account, Login, Recording, PublicationGroup
+    )
 except ImportError:
-    from database.models import Account, Recording, PublicationGroup
+    from database.models import (
+        Account, Login, Recording, PublicationGroup
+    )
 
 
 async def connect_database(
@@ -26,6 +30,6 @@ async def connect_database(
     Path(database_path).parent.mkdir(parents=True, exist_ok=True)
     return await Database.create(
         f'sqlite:///{database_path}.db',
-        tables=[Account, Recording, PublicationGroup],
+        tables=[Account, Login, Recording, PublicationGroup],
         testing=testing,
     )

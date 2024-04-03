@@ -11,14 +11,24 @@ Author: Joe Stanley
 from uuid import uuid4
 from datetime import datetime
 
-from pydantic import EmailStr
+from pydantic import BaseModel, EmailStr
 from pydbantic import DataBaseModel, PrimaryKey
+
+class NewAccountData(BaseModel):
+    """Data Required for a New Account."""
+    name: str
+    email: EmailStr
+    password: str
 
 class Account(DataBaseModel):
     """Single Account."""
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     name: str
     email: EmailStr
+
+class Login(DataBaseModel):
+    """Login Information for a Singular Account."""
+    id: str = PrimaryKey(default=lambda: str(uuid4()))
     hashed_password: str
 
 class PublicationGroup(DataBaseModel):

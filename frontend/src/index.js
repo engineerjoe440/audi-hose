@@ -4,9 +4,10 @@ import ReactDOM from 'react-dom';
 import {RouterProvider, createBrowserRouter} from 'react-router-dom';
 import './index.css';
 import EmbedableRecorder from './Component';
-import LoginPortal from './login';
 import { RequireToken, fetchToken } from './auth';
 import AdminApp from './App';
+import LoginPortal from './login';
+import SignUpPortal from './signup';
 
 // Find all widget divs
 const widgetDivs = document.querySelectorAll('.audihose-recorder-widget');
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
     </RequireToken>
   },
   {path: "login", element: <LoginPortal />},
+  {path: "sign-up", element: <SignUpPortal />},
 ]);
 
 if (window.location.pathname.includes("component")) {
@@ -42,11 +44,13 @@ if (window.location.pathname.includes("component")) {
       <RouterProvider router={router} />
     </React.StrictMode>
   );
-} else if (window.location.pathname.includes("login")) {
+} else if (
+    window.location.pathname.includes("login") || window.location.pathname.includes("sign-up")
+  ) {
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(
     <React.StrictMode>
-      <LoginPortal />
+      <RouterProvider router={router} />
     </React.StrictMode>
   );
 }

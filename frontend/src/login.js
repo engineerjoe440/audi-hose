@@ -25,11 +25,11 @@ import { getDesignTokens, getSavedThemeMode } from "./theme";
 import { fetchToken, setToken, refreshTokenCall } from './auth';
 import axios from "axios";
 
-const client = axios.create({
+export const client = axios.create({
   baseURL: "/" 
 });
 
-function Copyright(props) {
+export function Copyright(props) {
 
   return (
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
@@ -43,11 +43,12 @@ function Copyright(props) {
   );
 }
 
-const theme = createTheme(getDesignTokens(getSavedThemeMode()));
+export const theme = createTheme(getDesignTokens(getSavedThemeMode()));
 
 export default function LoginPortal() {
   refreshTokenCall({redirect: false});
   const [loginAlert, setLoginAlert] = React.useState("");
+  const [signupRequired, setSignupRequired] = React.useState(null);
 
   React.useEffect(()=>{
     // Redirect if Auth is Valid
@@ -55,7 +56,31 @@ export default function LoginPortal() {
     if (!!fetchToken()){
       window.location.href = "/";
     }
-  },[]);
+    // Redirect if No Accounts are Present
+    if (signupRequired) {
+      window.location.href = "/sign-up";
+    } else {
+      fetchSignupStatus();
+    }
+  },[signupRequired]);
+
+  const fetchSignupStatus = () => {
+    fetch("/signup-required", {
+      method: "GET",
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Cookie': `client_token=${window.client_token}`,
+      },
+    }).then(res => {
+      res.json().then(jsonData => {
+        // Store the Signup Status
+        setSignupRequired(jsonData);
+      })
+    }).catch(res => {
+      console.log(res);
+    })
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault();

@@ -9,11 +9,7 @@ Author: Joe Stanley
 ################################################################################
 
 from typing import Annotated, Union
-import time
-import secrets
 
-import bcrypt
-import jwt
 from fastapi import (
     Request, APIRouter, HTTPException, status, Query, Cookie, Depends
 )
@@ -24,14 +20,14 @@ from loguru import logger
 
 try:
     from backend.sessions import get_session, close_session, UserSession
-    from backend.database import Account
+    from backend.database.models import Account, Login, NewAccountData
+    from backend.security import verify_token, check_password, sign_jwt
+    from backend.api.accounts import create_new_account
 except ImportError:
     from sessions import get_session, close_session, UserSession
-    from database import Account
-
-JWT_SECRET = secrets.token_urlsafe(24) # Reloaded each time app starts
-JWT_ALGORITHM ="HS256"
-JWT_EXPIRY_LENGTH = 1800 # 30 minutes
+    from database.models import Account, Login, NewAccountData
+    from api.accounts import create_new_account
+    from security import verify_token, check_password, sign_jwt
 
 
 router = APIRouter()
@@ -49,54 +45,10 @@ class TokenResponse(BaseModel):
     message: Union[str, None] = None
 
 
-def get_hashed_password(plain_text_password: str) -> str:
-    """Hash a password for the first time."""
-    # (Using bcrypt, the salt is saved into the hash itself)
-    return bcrypt.hashpw(
-        plain_text_password.encode("utf-8"),
-        bcrypt.gensalt()
-    ).decode('utf-8')
-
-def check_password(plain_text_password: str, hashed_password: str) -> bool:
-    """Check hashed password."""
-    # Using bcrypt the salt is saved into the hash itself
-    return bcrypt.checkpw(
-        plain_text_password.encode("utf-8"),
-        hashed_password.encode("utf-8"))
-
-def sign_jwt(payload: dict) -> dict[str, str]:
-    """Generate a JSON Web Token (assuming valid authentication)."""
-    payload["expires"] = time.time() + JWT_EXPIRY_LENGTH
-    token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-    return token
-
-def decode_jwt(token: str) -> dict:
-    """Decode the JSON Web Token and Validate it."""
-    try:
-        decoded_token = jwt.decode(
-            token,
-            JWT_SECRET,
-            algorithms=[JWT_ALGORITHM]
-        )
-        if decoded_token["expires"] >= time.time():
-            return decoded_token
-        else:
-            return None
-    except jwt.exceptions.DecodeError:
-        return {}
-
-def verify_token(token: str) -> bool:
-    """Verify that the token can be decoded, and that it's valid."""
-    try:
-        payload = decode_jwt(token)
-        return bool(payload)
-    except jwt.exceptions.DecodeError:
-        return False
-
-
 async def get_query_token(
     token: Annotated[str | None, Query()] = None,
 ):
+    """Get the Client Token from a Query."""
     if token is None or not verify_token(token=token):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     return token
@@ -144,13 +96,19 @@ class JWTBearer(HTTPBearer):
     def verify_jwt(self, jwt_token: str) -> bool:
         """Verify that the JWT is Appropriately Signed."""
         return verify_token(token=jwt_token)
+    
 
-async def perform_login(
-    login: LoginItem,
-    client_session: UserSession,
-) -> TokenResponse:
-    """Perform Authentication, Returning a Response with Token or Message."""
-    data = jsonable_encoder(login)
+@router.post("/login", response_model=TokenResponse)
+async def user_login(login_item: LoginItem) -> TokenResponse:
+    """Authenticate admin user and provide a JSON Web Token."""
+    session = get_session(client_token=login_item.client_token)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="could not identify active session object, please reload",
+        )
+    
+    data = jsonable_encoder(login_item)
     email = data["email"]
     password = data["password"]
 
@@ -162,37 +120,27 @@ async def perform_login(
         if accounts:
             # Verify Password
             for account in accounts:
-                if check_password(password, account.hashed_password):
+                if account.id is None:
+                    continue
+                login_db_entry = await Login.get(id=account.id)
+                if check_password(password, login_db_entry.hashed_password):
                     # Validated Account - Sign Token
                     response.token = sign_jwt({
                         "email": email,
                         "id": account.id,
-                        "session": client_session.client_token,
+                        "session": session.client_token,
                     })
                     response.message = None
                     # Set Session Parameters
-                    client_session.email = email
-                    client_session.account_id = account.id
+                    session.email = email
+                    session.account_id = account.id
     except ValueError as err:
         response.message = (
             f"Server failure: '{err}'\n"
             "If this issue persists, contact administrator."
         )
+        logger.exception(err)
     return response
-
-@router.post("/login", response_model=TokenResponse)
-async def user_login(
-    login_item: LoginItem,
-    #request: Request
-) -> TokenResponse:
-    """Authenticate admin user and provide a JSON Web Token."""
-    session = get_session(client_token=login_item.client_token)
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_410_GONE,
-            detail="could not identify active session object, please reload",
-        )
-    return await perform_login(login=login_item, client_session=session)
 
 @router.post(
     "/refresh-token",
@@ -219,3 +167,31 @@ async def logout(client_token: Annotated[str | None, Cookie()] = None):
     """Log Active User Out of System."""
     if client_token:
         close_session(client_token=client_token)
+
+@router.get("/signup-required")
+async def determine_signup_status() -> bool:
+    """Determine Whether a User Must be Created, First."""
+    return (await Account.count()) == 0
+
+@router.post("/create-initial-account")
+async def create_initial_account(
+    initial_account_data: NewAccountData,
+    client_token: Annotated[str | None, Cookie()] = None
+) -> TokenResponse:
+    """Create the Very First Account."""
+    if await determine_signup_status():
+        account_id = await create_new_account(account_data=initial_account_data)
+        token = TokenResponse()
+        session = get_session(client_token=client_token)
+        token.token = sign_jwt({
+            "email": initial_account_data.email,
+            "id": account_id,
+            "session": client_token,
+        })
+        session.email = initial_account_data.email
+        session.account_id = account_id
+        return token
+    raise HTTPException(
+        status_code=status.HTTP_423_LOCKED,
+        detail="Cannot create a new account."
+    )

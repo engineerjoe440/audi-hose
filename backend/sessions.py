@@ -37,8 +37,9 @@ class UserSession:
         """Equivalence is Based on `client_token` of Object."""
         if isinstance(__value, UserSession):
             return __value.client_token == self.client_token
-        elif isinstance(__value, str):
+        if isinstance(__value, str):
             return __value == self.client_token
+        return False
 
     def _accessed(self):
         """Record the Access Time."""

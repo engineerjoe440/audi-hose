@@ -35,7 +35,7 @@ def update(self: Config, key_name: str, value: str):
 Config.update = update
 
 
-class ConfigurationData(object):
+class ConfigurationData:
     """Base Configuration Data for Application."""
     # Generic Configuration Values
     site_url: str

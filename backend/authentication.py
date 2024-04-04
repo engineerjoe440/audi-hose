@@ -19,12 +19,12 @@ from pydantic import BaseModel
 from loguru import logger
 
 try:
-    from backend.sessions import get_session, close_session, UserSession
+    from backend.sessions import get_session, close_session
     from backend.database.models import Account, Login, NewAccountData
     from backend.security import verify_token, check_password, sign_jwt
     from backend.api.accounts import create_new_account
 except ImportError:
-    from sessions import get_session, close_session, UserSession
+    from sessions import get_session, close_session
     from database.models import Account, Login, NewAccountData
     from api.accounts import create_new_account
     from security import verify_token, check_password, sign_jwt
@@ -58,13 +58,10 @@ async def get_query_token(
 class JWTBearer(HTTPBearer):
     """Uploader Authentication Validator"""
     def __init__(self, auto_error: bool = True):
-        super(JWTBearer, self).__init__(auto_error=auto_error)
+        super().__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request):
-        credentials: HTTPAuthorizationCredentials = await super(
-            JWTBearer,
-            self
-        ).__call__(request)
+    async def __call__(self, req: Request):
+        credentials: HTTPAuthorizationCredentials = await super().__call__(req)
         if credentials:
             if not credentials.scheme == "Bearer":
                 logger.warning("Invalid authentication scheme.")
@@ -96,7 +93,7 @@ class JWTBearer(HTTPBearer):
     def verify_jwt(self, jwt_token: str) -> bool:
         """Verify that the JWT is Appropriately Signed."""
         return verify_token(token=jwt_token)
-    
+
 
 @router.post("/login", response_model=TokenResponse)
 async def user_login(login_item: LoginItem) -> TokenResponse:
@@ -107,7 +104,7 @@ async def user_login(login_item: LoginItem) -> TokenResponse:
             status_code=status.HTTP_410_GONE,
             detail="could not identify active session object, please reload",
         )
-    
+
     data = jsonable_encoder(login_item)
     email = data["email"]
     password = data["password"]

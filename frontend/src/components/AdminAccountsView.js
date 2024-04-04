@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { Typography } from '@mui/material';
+import { Box, Typography, Fab, Grid } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import { CollapsibleTable } from './CollapsibleTable';
 import { api_client, fetchToken } from '../auth';
 
@@ -31,7 +32,18 @@ export function AdminAccountsView(props) {
   
   return (
     <>
-      <Typography variant='h3'>Accounts</Typography>
+      <Grid container>
+        <Grid item xs={10}>
+          <Typography variant='h3'>Accounts</Typography>
+        </Grid>
+        <Grid item xs={2}>
+          <Box sx={{ '& > :not(style)': { m: 1 } }}>
+            <Fab color="primary" aria-label="add">
+              <AddIcon />
+            </Fab>
+          </Box>
+        </Grid>
+      </Grid>
       <br/>
       <CollapsibleTable childRows={accounts} />
     </>

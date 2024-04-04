@@ -76,6 +76,6 @@ async def create_new_recording(
 async def send_new_data_notification(recording_id: str):
     """Send the Notification of a New Recording."""
     recording = await Recording.get(id=recording_id)
-    for account in recording.group.accounts:
+    for _ in recording.group.accounts:
         # Publish Notification for Account
         ...

@@ -39,11 +39,6 @@ async def get_my_account(
         return await Account.get(id=session.account_id)
 
 @router.put("/")
-async def add_new_account(new_account: Account) -> int:
-    """Create a New Account from the Provided Definition."""
-    return await new_account.insert()
-
-@router.put("/create")
 async def create_new_account(account_data: NewAccountData) -> str:
     """Create a New Account from the Required Data."""
     new_account = await Account.create(

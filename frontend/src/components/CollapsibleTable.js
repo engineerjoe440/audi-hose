@@ -1,6 +1,7 @@
 import * as React from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
@@ -16,11 +17,51 @@ import Paper from '@mui/material/Paper';
 import AddIcon from '@mui/icons-material/Add';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import toast from 'react-hot-toast';
+import { api_client, fetchToken } from '../auth';
 
 
 export function CollapsibleTableRow(props) {
   const { row } = props;
   const [open, setOpen] = React.useState(false);
+
+  const doRemove = () => {
+    api_client.delete("accounts",
+      {
+        data: row,
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${fetchToken()}`
+        },
+      }
+    ).then(res => res.data).then(jsonData => {
+      // Account Has Been Removed
+      toast.custom(
+        <Paper elevation={6}>
+          <Typography variant="h5">
+            Account Successfully Removed
+          </Typography>
+          <Button
+            endIcon={<RefreshIcon />}
+            onClick={() => {window.location.reload()}}
+          >
+            Refresh
+          </Button>
+        </Paper>,
+        {
+          duration: 8000,
+        }
+      );
+    })
+    .catch((error) => {
+      if( error.response ){
+        console.log(error.response.data); // => the response payload
+      }
+    });
+  }
 
   return (
     <React.Fragment>
@@ -40,7 +81,12 @@ export function CollapsibleTableRow(props) {
         <TableCell component="th" scope="row">
           {row.email}
         </TableCell>
-        <TableCell align="right">{row.id}</TableCell>
+        <TableCell>{row.id}</TableCell>
+        <TableCell align="right">
+          <IconButton onClick={doRemove}>
+            <DeleteIcon/>
+          </IconButton>
+        </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
@@ -111,7 +157,8 @@ export function CollapsibleTable({
               <TableCell />
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell align="right">ID</TableCell>
+              <TableCell>ID</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

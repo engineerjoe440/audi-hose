@@ -36,7 +36,6 @@ class PublicationGroup(DataBaseModel):
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     name: str
     accounts: list[Account]
-    description: str = ""
 
 class Recording(DataBaseModel):
     """Single Recording Reference."""

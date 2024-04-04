@@ -37,6 +37,9 @@ export function CollapsibleTableRow(props) {
         <TableCell component="th" scope="row">
           {row.name}
         </TableCell>
+        <TableCell component="th" scope="row">
+          {row.email}
+        </TableCell>
         <TableCell align="right">{row.id}</TableCell>
       </TableRow>
       <TableRow>
@@ -92,6 +95,7 @@ CollapsibleTableRow.propTypes = {
       }),
     ).isRequired,
     name: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
     id: PropTypes.string.isRequired,
   }).isRequired,
 };
@@ -106,6 +110,7 @@ export function CollapsibleTable({
             <TableRow>
               <TableCell />
               <TableCell>Name</TableCell>
+              <TableCell>Email</TableCell>
               <TableCell align="right">ID</TableCell>
             </TableRow>
           </TableHead>

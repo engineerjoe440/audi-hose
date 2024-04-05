@@ -20,14 +20,16 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import toast from 'react-hot-toast';
+import { SelectGroupDialog } from './AdminDialog';
 import { api_client, fetchToken } from '../auth';
 
 
 export function CollapsibleTableRow(props) {
   const { row } = props;
-  const [open, setOpen] = React.useState(false);
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const doRemove = () => {
+  const doRemoveAccount = () => {
     api_client.delete("accounts",
       {
         data: row,
@@ -63,16 +65,55 @@ export function CollapsibleTableRow(props) {
     });
   }
 
+  const doRemoveGroup = (groupId) => {
+    api_client.delete(`groups/accounts/${groupId}`,
+      {
+        withCredentials: true,
+        params: {
+          account_id: row.id,
+        },
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${fetchToken()}`
+        },
+      }
+    ).then(res => res.data).then(jsonData => {
+      // Account Has Been Removed
+      toast.custom(
+        <Paper elevation={6}>
+          <Typography variant="h5">
+            Account Successfully Removed
+          </Typography>
+          <Button
+            endIcon={<RefreshIcon />}
+            onClick={() => {window.location.reload()}}
+          >
+            Refresh
+          </Button>
+        </Paper>,
+        {
+          duration: 8000,
+        }
+      );
+    })
+    .catch((error) => {
+      if( error.response ){
+        console.log(error.response.data); // => the response payload
+      }
+    });
+  }
+
   return (
     <React.Fragment>
+      <SelectGroupDialog open={dialogOpen} onClose={() => {setDialogOpen(false)}}/>
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>
           <IconButton
             aria-label="expand row"
             size="small"
-            onClick={() => setOpen(!open)}
+            onClick={() => setDrawerOpen(!drawerOpen)}
           >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            {drawerOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
         <TableCell component="th" scope="row">
@@ -83,14 +124,14 @@ export function CollapsibleTableRow(props) {
         </TableCell>
         <TableCell>{row.id}</TableCell>
         <TableCell align="right">
-          <IconButton onClick={doRemove}>
+          <IconButton onClick={doRemoveAccount}>
             <DeleteIcon/>
           </IconButton>
         </TableCell>
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={open} timeout="auto" unmountOnExit>
+          <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Grid container>
                 <Grid item xs={10}>
@@ -100,7 +141,12 @@ export function CollapsibleTableRow(props) {
                 </Grid>
                 <Grid item xs={2}>
                   <Box sx={{ '& > :not(style)': { m: 1 } }}>
-                    <Fab size="small" color="primary" aria-label="add">
+                    <Fab
+                      size="small"
+                      color="primary"
+                      aria-label="add"
+                      onClick={() => {setDialogOpen(true)}}
+                    >
                       <AddIcon />
                     </Fab>
                   </Box>
@@ -110,7 +156,8 @@ export function CollapsibleTableRow(props) {
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
-                    <TableCell align="right">ID</TableCell>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -119,7 +166,12 @@ export function CollapsibleTableRow(props) {
                       <TableCell component="th" scope="row">
                         {associationRow.name}
                       </TableCell>
-                      <TableCell align="right">{row.id}</TableCell>
+                      <TableCell>{associationRow.id}</TableCell>
+                      <TableCell align="right">
+                        <IconButton onClick={() => {doRemoveGroup(associationRow.id)}}>
+                          <DeleteIcon/>
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

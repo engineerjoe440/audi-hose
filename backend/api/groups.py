@@ -83,7 +83,7 @@ async def modify_accounts_in_group(
 @router.delete("/accounts/{group_id}")
 async def remove_account_from_group(
     group_id: str,
-    account_id: str
+    account_id: str,
 ):
     """Remove an Account from a Publication Group."""
     group = await PublicationGroup.get(id=group_id)

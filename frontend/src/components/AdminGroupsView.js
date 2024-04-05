@@ -8,44 +8,29 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import AddIcon from '@mui/icons-material/Add';
-import { api_client, fetchToken } from '../auth';
+import { NewGroupDialog } from './AdminDialog';
+import { getGroupsList } from '../api/groups';
 
 
 export function AdminGroupsView() {
     const [groups, setGroups] = React.useState([]);
+    const [open, setOpen] = React.useState(false);
   
     React.useEffect(()=>{
       // Load Requisites when page Completes
-      getGroupsList();
+      getGroupsList({onSet: setGroups});
     },[]);
-  
-    const getGroupsList = () => {
-      api_client.get("groups", {
-        withCredentials: true,
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${fetchToken()}`
-        },
-      }).then(res => res.data).then(jsonData => {
-        // Record the Groups
-        setGroups(jsonData);
-      })
-      .catch((error) => {
-        if( error.response ){
-          console.log(error.response.data); // => the response payload
-        }
-      });
-    }
 
   return (
     <>
+      <NewGroupDialog open={open} onClose={() => {setOpen(false)}} />
       <Grid container>
         <Grid item xs={10}>
           <Typography variant='h3'>Submission Groups</Typography>
         </Grid>
         <Grid item xs={2}>
           <Box sx={{ '& > :not(style)': { m: 1 } }}>
-            <Fab color="primary" aria-label="add">
+            <Fab color="primary" aria-label="add" onClick={() => {setOpen(true)}}>
               <AddIcon />
             </Fab>
           </Box>
@@ -56,7 +41,7 @@ export function AdminGroupsView() {
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
-              <TableCell align="right">ID</TableCell>
+              <TableCell>ID</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -68,7 +53,7 @@ export function AdminGroupsView() {
                 <TableCell component="th" scope="row">
                   {row.name}
                 </TableCell>
-                <TableCell align="right">{row.id}</TableCell>
+                <TableCell>{row.id}</TableCell>
               </TableRow>
             ))}
           </TableBody>

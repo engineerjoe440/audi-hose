@@ -14,7 +14,7 @@ import ListItemText from '@mui/material/ListItemText';
 import PersonIcon from '@mui/icons-material/Person';
 import AllInboxIcon from '@mui/icons-material/AllInbox';
 import { FixedSizeList } from 'react-window';
-import { api_client, fetchToken } from '../auth';
+import { getGroupsListByAccount } from '../api/groups';
 
 function renderRow(props) {
 
@@ -34,31 +34,9 @@ export default function AdminAppDrawer(props) {
     // Load Requisites when page Completes
     console.log(props.account)
     if (!!props.account) {
-      getGroupsList(props.account.id);
+      getGroupsListByAccount({accountId: props.account.id, onSet: setGroups});
     }
   },[props.account]);
-
-  const getGroupsList = (accountId) => {
-    console.log(accountId)
-    if (!accountId) {
-      return
-    }
-    api_client.get(`groups/by-account/${accountId}`, {
-      withCredentials: true,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${fetchToken()}`
-      },
-    }).then(res => res.data).then(jsonData => {
-      // Record the Groups for This Account
-      setGroups(jsonData);
-    })
-    .catch((error) => {
-      if( error.response ){
-        console.log(error.response.data); // => the response payload
-      }
-    });
-  }
   
 
   return (

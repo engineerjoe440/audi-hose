@@ -16,16 +16,6 @@ import AllInboxIcon from '@mui/icons-material/AllInbox';
 import { FixedSizeList } from 'react-window';
 import { getGroupsListByAccount } from '../api/groups';
 
-function renderRow(props) {
-
-  return (
-    <ListItem key={props.data[props.index].id} disablePadding>
-      <ListItemButton>
-        <ListItemText primary={props.data[props.index].name} />
-      </ListItemButton>
-    </ListItem>
-  );
-}
 
 export default function AdminAppDrawer(props) {
   const [groups, setGroups] = React.useState([]);
@@ -36,6 +26,22 @@ export default function AdminAppDrawer(props) {
       getGroupsListByAccount({accountId: props.account.id, onSet: setGroups});
     }
   },[props.account]);
+
+
+  const renderRow = (rowProps) => {
+    return (
+      <ListItem key={rowProps.data[rowProps.index].id} disablePadding>
+        <ListItemButton onClick={() => {
+          props.onNavigate({
+            page: "Submissions",
+            submissionGroup: rowProps.data[rowProps.index].name
+          })
+        }}>
+          <ListItemText primary={rowProps.data[rowProps.index].name} />
+        </ListItemButton>
+      </ListItem>
+    );
+  }
   
 
   return (
@@ -56,13 +62,13 @@ export default function AdminAppDrawer(props) {
         <Divider />
         <List>
           <ListItem key={"accounts"} disablePadding>
-            <ListItemButton onClick={() => {props.onNavigate("Accounts")}}>
+            <ListItemButton onClick={() => {props.onNavigate({page: "Accounts"})}}>
               <ListItemIcon><PersonIcon /></ListItemIcon>
               <ListItemText primary={"Accounts"} />
             </ListItemButton>
           </ListItem>
           <ListItem key={"groups"} disablePadding>
-            <ListItemButton onClick={() => {props.onNavigate("Groups")}}>
+            <ListItemButton onClick={() => {props.onNavigate({page: "Groups"})}}>
               <ListItemIcon><AllInboxIcon /></ListItemIcon>
               <ListItemText primary={"Groups"} />
             </ListItemButton>

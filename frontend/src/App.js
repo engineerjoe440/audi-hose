@@ -12,8 +12,8 @@ export default function AdminApp() {
     // Load Requisites when page Completes
   },[]);
 
-  const navigate = (pageName) => {
-    setSearchParams({page: pageName})
+  const navigate = (navParams) => {
+    setSearchParams(navParams)
   }
 
   return (

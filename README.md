@@ -5,7 +5,25 @@ FOSS Speakpipe alternative built to connect audiences to the creators they love.
 
 ## Installation
 
-:warning: TODO
+AudiHose is built to be run in a [Docker](https://docs.docker.com/get-started/overview/)
+[container](https://www.redhat.com/en/topics/containers/whats-a-linux-container).
+The easiest way to get AudiHose started is to use a [docker-compose](https://docs.docker.com/compose/)
+configuration to define the parameters for your application to use. Here's an
+example:
+
+```yaml
+version: "3.9"
+
+# AudiHose Example Configuration
+services:
+  audihose:
+    image: ghcr.io/engineerjoe440/audi-hose:main
+    ports:
+      - 8082:80
+    restart: unless-stopped
+    environment:
+      # - SITE_URL: https://audihose.example.com
+```
 
 ## Setup
 

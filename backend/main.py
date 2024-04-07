@@ -143,6 +143,7 @@ async def component_root(
 
 @app.get("/component.js", response_class=RedirectResponse, include_in_schema=False)
 async def component_redirect() -> RedirectResponse:
+    """Redirect for the Standard Embed-Able Component."""
     return RedirectResponse(url="/static/react/js/main.js")
 
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)

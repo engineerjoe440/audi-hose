@@ -11,6 +11,7 @@ export const getGroupsList = (props) => {
       },
     }).then(res => res.data).then(jsonData => {
       // Record the Groups
+      console.log(jsonData);
       props.onSet(jsonData);
     })
     .catch((error) => {
@@ -21,7 +22,6 @@ export const getGroupsList = (props) => {
   }
 
 export const getGroupsListByAccount = (props) => {
-    console.log(props.accountId)
     if (!props.accountId) {
       return
     }

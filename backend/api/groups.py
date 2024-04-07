@@ -28,7 +28,7 @@ async def create_new_group(new_group: PublicationGroup) -> int:
     """Create a New Publication Group from the Required Data."""
     return await new_group.insert()
 
-@router.post("/")
+@router.patch("/")
 async def modify_existing_group(group: PublicationGroup) -> int:
     """Modify an Existing Publication Group Using the Supplied Data."""
     return await group.update()
@@ -58,7 +58,7 @@ async def add_account_to_group(
     group.accounts.append(account)
     await group.save()
 
-@router.patch("/accounts/{group_id}")
+@router.post("/accounts/{group_id}")
 async def add_account_id_to_group(
     group_id: str,
     account_id: str,
@@ -70,7 +70,7 @@ async def add_account_id_to_group(
     print(group.accounts)
     await group.save()
 
-@router.post("/accounts/{group_id}")
+@router.patch("/accounts/{group_id}")
 async def modify_accounts_in_group(
     group_id: str,
     accounts: list[Account],

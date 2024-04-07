@@ -4,7 +4,7 @@ import ReactDOM from 'react-dom';
 import {RouterProvider, createBrowserRouter} from 'react-router-dom';
 import './index.css';
 import EmbedableRecorder from './Component';
-import { RequireToken, fetchToken } from './auth';
+import { RequireToken } from './auth';
 import AdminApp from './App';
 import LoginPortal from './login';
 import SignUpPortal from './signup';
@@ -23,31 +23,21 @@ const router = createBrowserRouter([
   {path: "sign-up", element: <SignUpPortal />},
 ]);
 
-if (window.location.pathname.includes("component")) {
-  // Component Code
-  // Inject our React EmbedableRecorder into each class
-  widgetDivs.forEach(div => {
-    ReactDOM.render(
-      <React.StrictMode>
-        <EmbedableRecorder
-          color={div.dataset.color}
-          prompt={div.dataset.prompt}
-        />
-      </React.StrictMode>,
-        div
-    );
-  });
-} else if (!!fetchToken()) {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(
+widgetDivs.forEach(div => {
+  ReactDOM.render(
     <React.StrictMode>
-      <RouterProvider router={router} />
-    </React.StrictMode>
+      <EmbedableRecorder
+        color={div.dataset.color}
+        prompt={div.dataset.prompt}
+        groupId={div.dataset.groupId}
+      />
+    </React.StrictMode>,
+      div
   );
-} else if (
-    window.location.pathname.includes("login") || window.location.pathname.includes("sign-up")
-  ) {
-  const root = ReactDOM.createRoot(document.getElementById('root'));
+});
+const rootElement = document.getElementById('root');
+if (!!rootElement) {
+  const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
       <RouterProvider router={router} />

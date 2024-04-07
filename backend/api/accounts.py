@@ -13,16 +13,21 @@ from typing import Annotated
 from fastapi import APIRouter, Cookie
 
 try:
-    from backend.database.models import Account, Login, NewAccountData
+    from backend.database.models import (
+        Account, AccountWithGroups, Login, NewAccountData, PublicationGroup
+    )
     from backend.security import get_hashed_password
     from backend.sessions import get_session
 except ImportError:
-    from database.models import Account, Login, NewAccountData
+    from database.models import (
+        Account, AccountWithGroups, Login, NewAccountData, PublicationGroup
+    )
     from security import get_hashed_password
     from sessions import get_session
 
 
 router = APIRouter(prefix="/accounts")
+
 
 @router.get("/")
 async def get_all_accounts() -> list[Account]:
@@ -37,6 +42,23 @@ async def get_my_account(
     session = get_session(client_token=client_token)
     if session:
         return await Account.get(id=session.account_id)
+
+@router.get("/with-groups")
+async def get_accounts_with_associations() -> list[AccountWithGroups]:
+    """Get List of Accounts with Group Information."""
+    accounts_list = []
+    for account in await Account.all():
+        groups = []
+        for group in await PublicationGroup.all():
+            if account in group.accounts:
+                groups.append(group)
+        accounts_list.append(AccountWithGroups(
+            id=account.id,
+            name=account.name,
+            email=account.email,
+            associations=groups,
+        ))
+    return accounts_list
 
 @router.put("/")
 async def create_new_account(account_data: NewAccountData) -> str:

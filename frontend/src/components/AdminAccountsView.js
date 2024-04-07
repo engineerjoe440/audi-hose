@@ -15,7 +15,7 @@ export function AdminAccountsView(props) {
   },[]);
 
   const getAccountsList = () => {
-    api_client.get("accounts", {
+    api_client.get("accounts/with-groups", {
       withCredentials: true,
       headers: {
         'Accept': 'application/json',

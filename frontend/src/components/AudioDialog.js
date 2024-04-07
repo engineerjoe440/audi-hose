@@ -30,7 +30,7 @@ export default function AudioDialog(props) {
       params: {
         subject: 'test',
         email: 'admin@example.com',
-        group_id: 'c95d8a76-528c-48cc-96cc-93770cc1cbb9'
+        group_id: props.groupId,
       },
       headers: {
         'Accept': 'application/json',

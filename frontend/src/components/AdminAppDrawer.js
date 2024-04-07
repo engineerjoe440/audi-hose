@@ -32,7 +32,6 @@ export default function AdminAppDrawer(props) {
 
   React.useEffect(()=>{
     // Load Requisites when page Completes
-    console.log(props.account)
     if (!!props.account) {
       getGroupsListByAccount({accountId: props.account.id, onSet: setGroups});
     }

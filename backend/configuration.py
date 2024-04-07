@@ -39,6 +39,7 @@ class ConfigurationData:
     """Base Configuration Data for Application."""
     # Generic Configuration Values
     site_url: str
+    cross_site_origins: list[str]
     _recordings_file_path: str
     # Email Settings
     smtp_server: str
@@ -69,6 +70,8 @@ class ConfigReader(ConfigurationData):
                 "RECORDINGS_PATH",
                 "./recordings/"
             ),
+            cross_site_origins=os.getenv("CROSS_SITE_ORIGINS","")
+                .replace(" ", "").split(",")
         )
         # Email Configuration
         self._config.add_section('Email').set(

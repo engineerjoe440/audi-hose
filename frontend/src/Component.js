@@ -18,6 +18,7 @@ export default function EmbedableRecorder(props) {
       />
       <AudioDialog
         open={open}
+        groupId={props.groupId}
         onClose={handleClose}
       />
     </div>

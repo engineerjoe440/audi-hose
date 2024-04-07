@@ -144,7 +144,7 @@ export default function LoginPortal() {
           sm={4}
           md={7}
           sx={{
-            backgroundImage: 'url(/static/react/audihose-logo.png)',
+            backgroundImage: 'url(/static/react/audihose-logo-large.png)',
             backgroundRepeat: 'no-repeat',
             backgroundColor: (t) =>
               t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],

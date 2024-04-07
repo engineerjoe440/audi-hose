@@ -20,11 +20,14 @@ class NewAccountData(BaseModel):
     email: EmailStr
     password: str
 
-class Account(DataBaseModel):
-    """Single Account."""
-    id: str = PrimaryKey(default=lambda: str(uuid4()))
+class AccountData(BaseModel):
+    """Data Needed for an Account."""
     name: str
     email: EmailStr
+
+class Account(AccountData, DataBaseModel):
+    """Single Account."""
+    id: str = PrimaryKey(default=lambda: str(uuid4()))
 
 class Login(DataBaseModel):
     """Login Information for a Singular Account."""
@@ -36,6 +39,11 @@ class PublicationGroup(DataBaseModel):
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     name: str
     accounts: list[Account]
+
+class AccountWithGroups(AccountData):
+    """Account With Groups Information."""
+    id: str
+    associations: list[PublicationGroup]
 
 class Recording(DataBaseModel):
     """Single Recording Reference."""

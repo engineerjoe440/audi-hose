@@ -198,11 +198,8 @@ export function SelectGroupDialog(props) {
 
   React.useEffect(()=>{
     // Load Requisites when page Completes
-    console.log(props.account)
-    if (!!props.account) {
-      getGroupsList({onSet: setGroups});
-    }
-  },[props.account]);
+    getGroupsList({onSet: setGroups});
+  },[]);
   
     return (
       <React.Fragment>
@@ -215,40 +212,38 @@ export function SelectGroupDialog(props) {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
               const formJson = Object.fromEntries(formData.entries());
-              const email = formJson.email;
-              // api_client.put(`groups/accounts/${groupId}`,
-              //   {
-              //     data: row,
-              //     withCredentials: true,
-              //     headers: {
-              //       'Accept': 'application/json',
-              //       'Authorization': `Bearer ${fetchToken()}`
-              //     },
-              //   }
-              // ).then(res => res.data).then(jsonData => {
-              //   // Account Has Been Removed
-              //   toast.custom(
-              //     <Paper elevation={6}>
-              //       <Typography variant="h5">
-              //         Account Successfully Removed
-              //       </Typography>
-              //       <Button
-              //         endIcon={<RefreshIcon />}
-              //         onClick={() => {window.location.reload()}}
-              //       >
-              //         Refresh
-              //       </Button>
-              //     </Paper>,
-              //     {
-              //       duration: 8000,
-              //     }
-              //   );
-              // })
-              // .catch((error) => {
-              //   if( error.response ){
-              //     console.log(error.response.data); // => the response payload
-              //   }
-              // });
+              api_client.post(`groups/accounts/${formJson.group}?account_id=${props.account.id}`,
+                {
+                  withCredentials: true,
+                  headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${fetchToken()}`
+                  },
+                }
+              ).then(res => res.data).then(jsonData => {
+                // Account has Been Added to Group
+                toast.custom(
+                  <Paper elevation={6}>
+                    <Typography variant="h5">
+                      Group Successfully Added
+                    </Typography>
+                    <Button
+                      endIcon={<RefreshIcon />}
+                      onClick={() => {window.location.reload()}}
+                    >
+                      Refresh
+                    </Button>
+                  </Paper>,
+                  {
+                    duration: 8000,
+                  }
+                );
+              })
+              .catch((error) => {
+                if( error.response ){
+                  console.log(error.response.data); // => the response payload
+                }
+              });
               props.onClose();
             },
           }}

@@ -105,7 +105,11 @@ export function CollapsibleTableRow(props) {
 
   return (
     <React.Fragment>
-      <SelectGroupDialog open={dialogOpen} onClose={() => {setDialogOpen(false)}}/>
+      <SelectGroupDialog
+        open={dialogOpen}
+        account={row}
+        onClose={() => {setDialogOpen(false)}}
+      />
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
         <TableCell>
           <IconButton

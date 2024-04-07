@@ -14,7 +14,8 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Cookie
-from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
@@ -57,6 +58,17 @@ app = FastAPI(
     ),
     version=__version__,
     lifespan=lifespan,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost",
+        "http://localhost:8000", # Uvicorn Default Server
+        "http://localhost:1313", # Hugo Default Server
+    ] + ConfigReader().set_attributes().cross_site_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(api.router)
 app.include_router(authentication.router)
@@ -105,9 +117,36 @@ async def root(
     response.set_cookie(APP_COOKIE_NAME, client_token)
     return response
 
+
+@app.get("/component", response_class=HTMLResponse, include_in_schema=False)
+async def component_root(
+    request: Request,
+    client_token: Annotated[str | None, Cookie()] = None,
+) -> HTMLResponse:
+    """Server Root."""
+    if not client_token:
+        client_token = SessionManager.create_session()
+    elif not get_session(client_token=client_token):
+        client_token = SessionManager.create_session()
+    # Fall Back to Landing Page
+    response = TEMPLATES.TemplateResponse(
+        "component.html",
+        {
+            "request": request,
+            APP_COOKIE_NAME: client_token,
+            "console_app_name": __html_header__,
+            "year": datetime.datetime.now().year
+        },
+    )
+    response.set_cookie(APP_COOKIE_NAME, client_token)
+    return response
+
+@app.get("/component.js", response_class=RedirectResponse, include_in_schema=False)
+async def component_redirect() -> RedirectResponse:
+    return RedirectResponse(url="/static/react/js/main.js")
+
 @app.get("/login", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/sign-up", response_class=HTMLResponse, include_in_schema=False)
-@app.get("/component", response_class=HTMLResponse, include_in_schema=False)
 async def app_base(
     request: Request,
     client_token: Annotated[str | None, Cookie()] = None,
@@ -134,8 +173,6 @@ async def app_base(
 @app.exception_handler(Exception)
 async def validation_exception_handler(request: Request, exc: Exception):
     """Global Exception-Handling Middleware - Reports Errors where Needed."""
-    config = ConfigReader()
-    config.set_attributes()
     # Attempt Identification of the Client User
     try:
         client_token = request.cookies.get(APP_COOKIE_NAME)
@@ -144,7 +181,7 @@ async def validation_exception_handler(request: Request, exc: Exception):
     except (AttributeError, KeyError):
         email_desc = ""
     # Alert Subscribers to the Exception
-    config.ntfy(
+    ConfigReader().set_attributes().ntfy(
         message=(
             f"Failed HTTP Method: {request.method} at URL: {request.url}.\n"
             f"{email_desc}Exception Message: {exc!r}"

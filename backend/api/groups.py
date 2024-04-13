@@ -1,7 +1,7 @@
 ################################################################################
 """
 Audi-Hose
-FOSS Speakpipe alternative built to connect audiences to the creators they love.
+Connecting audiences to the creators they love with easy audio.
 
 License: AGPL-3.0
 Author: Joe Stanley
@@ -22,6 +22,11 @@ router = APIRouter(prefix="/groups")
 async def get_all_groups() -> list[PublicationGroup]:
     """Get the List of all User Publication Groups."""
     return await PublicationGroup.all()
+
+@router.get("/{group_id}")
+async def get_group_by_id(group_id: str) -> PublicationGroup:
+    """Get the Publication Group by ID."""
+    return await PublicationGroup.get(id=group_id)
 
 @router.put("/")
 async def create_new_group(new_group: PublicationGroup) -> int:

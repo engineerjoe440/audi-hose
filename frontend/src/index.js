@@ -30,6 +30,7 @@ widgetDivs.forEach(div => {
         color={div.dataset.color}
         prompt={div.dataset.prompt}
         groupId={div.dataset.groupId}
+        audihoseUrl={div.dataset.audihoseUrl}
       />
     </React.StrictMode>,
       div

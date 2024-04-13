@@ -1,7 +1,7 @@
 ################################################################################
 """
 Audi-Hose
-FOSS Speakpipe alternative built to connect audiences to the creators they love.
+Connecting audiences to the creators they love with easy audio.
 
 License: AGPL-3.0
 Author: Joe Stanley
@@ -23,7 +23,7 @@ from loguru import logger
 try:
     from backend import __header__, __version__, api, authentication
     from backend.configuration import ConfigReader
-    from backend.database import connect_database
+    from backend.database import connect_database, PublicationGroup
     from backend.database.models import Account
     from backend.sessions import SessionManager, get_session
 except ImportError:
@@ -31,7 +31,7 @@ except ImportError:
     import authentication
     from __init__ import __header__, __version__
     from configuration import ConfigReader
-    from database import connect_database
+    from database import connect_database, PublicationGroup
     from database.models import Account
     from sessions import SessionManager, get_session
 
@@ -40,6 +40,9 @@ __html_header__ = __header__.replace("\n", r"\n")
 
 APP_COOKIE_NAME = "client_token"
 
+DEFAULT_GROUP_NAME = "DEFAULT-PUBLICATION-GROUP"
+DEFAULT_GROUP_ID = None
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Application Lifespan System."""
@@ -47,15 +50,25 @@ async def lifespan(_: FastAPI):
     logger.debug(__header__)
     # Connect Database
     _ = await connect_database()
+    # Create Default Submission Group
+    # pylint: disable=global-statement
+    global DEFAULT_GROUP_ID
+    if len(await PublicationGroup.filter(name=DEFAULT_GROUP_NAME)) == 0:
+        # Create Group
+        DEFAULT_GROUP_ID = (await PublicationGroup.create(
+            name=DEFAULT_GROUP_NAME,
+            accounts=[],
+        )).id
+    else:
+        DEFAULT_GROUP_ID = (await PublicationGroup.filter(
+            name=DEFAULT_GROUP_NAME
+        ))[0].id
     yield
     # Teardown
 
 app = FastAPI(
     title="AudiHose",
-    summary=(
-        "FOSS Speakpipe alternative built to connect audiences to the creators "
-        "they love."
-    ),
+    summary="Connecting audiences to the creators they love with easy audio.",
     version=__version__,
     lifespan=lifespan,
 )
@@ -105,7 +118,7 @@ async def root(
         "request": request,
         APP_COOKIE_NAME: client_token,
         "console_app_name": __html_header__,
-        "year": datetime.datetime.now().year
+        "year": datetime.datetime.now().year,
     }
     if account_id is not None:
         context["account_name"] = (await Account.get(id=account_id)).name
@@ -135,7 +148,9 @@ async def component_root(
             "request": request,
             APP_COOKIE_NAME: client_token,
             "console_app_name": __html_header__,
-            "year": datetime.datetime.now().year
+            "year": datetime.datetime.now().year,
+            "host_url": ConfigReader().set_attributes().site_url,
+            "default_group_id": DEFAULT_GROUP_ID,
         },
     )
     response.set_cookie(APP_COOKIE_NAME, client_token)

@@ -34,7 +34,7 @@ export default function AdminAppDrawer(props) {
         <ListItemButton onClick={() => {
           props.onNavigate({
             page: "Submissions",
-            submissionGroup: rowProps.data[rowProps.index].name
+            submissionGroup: rowProps.data[rowProps.index].id
           })
         }}>
           <ListItemText primary={rowProps.data[rowProps.index].name} />

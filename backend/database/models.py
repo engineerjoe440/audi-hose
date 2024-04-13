@@ -1,7 +1,7 @@
 ################################################################################
 """
 Audi-Hose
-FOSS Speakpipe alternative built to connect audiences to the creators they love.
+Connecting audiences to the creators they love with easy audio.
 
 License: AGPL-3.0
 Author: Joe Stanley
@@ -39,6 +39,7 @@ class PublicationGroup(DataBaseModel):
     id: str = PrimaryKey(default=lambda: str(uuid4()))
     name: str
     accounts: list[Account]
+    accepting_submissions: bool = True
 
 class AccountWithGroups(AccountData):
     """Account With Groups Information."""

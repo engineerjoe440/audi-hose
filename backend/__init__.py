@@ -9,7 +9,7 @@
                                                                          
 
                             -  Audi-Hose  -
-FOSS Speakpipe alternative built to connect audiences to the creators they love.
+Connecting audiences to the creators they love with easy audio.
 """
 ################################################################################
 

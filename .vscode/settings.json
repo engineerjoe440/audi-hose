@@ -7,6 +7,8 @@
         "gensalt",
         "hashpw",
         "jsonable",
-        "Speakpipe"
+        "loguru",
+        "Speakpipe",
+        "templating"
     ]
 }

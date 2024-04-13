@@ -35,7 +35,12 @@
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
 
-    <div id="audihose" data-color="green" class="audihose-recorder-widget" style="width: 250px; margin: auto; margin-top: 20px"></div>
+    <div id="audihose" class="audihose-recorder-widget"
+    data-color="green"
+    data-prompt="Send a Recording..."
+    data-audihose-url="{{host_url}}"
+    data-group-id="{{default_group_id}}"
+    style="width: 250px; margin: auto; margin-top: 20px"></div>
     
   </body>
 </html>

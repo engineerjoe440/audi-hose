@@ -4,9 +4,9 @@ import { Box } from "@mui/material";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "../theme";
 import CssBaseline from '@mui/material/CssBaseline';
-import AdminAppBar from './AdminAppBar';
+import AdminAppBar from './AdminViews/AdminAppBar';
+import AdminAppDrawer from './AdminViews/AdminAppDrawer';
 import { Toaster } from 'react-hot-toast';
-import AdminAppDrawer from './AdminAppDrawer';
 import { api_client, fetchToken } from '../auth';
 
 const drawerWidth = 220;

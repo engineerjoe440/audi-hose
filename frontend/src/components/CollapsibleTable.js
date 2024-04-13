@@ -20,7 +20,7 @@ import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import toast from 'react-hot-toast';
-import { SelectGroupDialog } from './AdminDialog';
+import { SelectGroupDialog } from './AdminViews/AdminDialog';
 import { api_client, fetchToken } from '../auth';
 
 

@@ -20,7 +20,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Tooltip from '@mui/material/Tooltip';
 import Link from '@mui/material/Link';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { clearToken, logout } from '../auth';
+import { clearToken, logout } from '../../auth';
 
 function stringToColor(string) {
   let hash = 0;

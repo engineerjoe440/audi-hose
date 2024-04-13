@@ -14,7 +14,7 @@ import ListItemText from '@mui/material/ListItemText';
 import PersonIcon from '@mui/icons-material/Person';
 import AllInboxIcon from '@mui/icons-material/AllInbox';
 import { FixedSizeList } from 'react-window';
-import { getGroupsListByAccount } from '../api/groups';
+import { getGroupsListByAccount } from '../../api/groups';
 
 
 export default function AdminAppDrawer(props) {

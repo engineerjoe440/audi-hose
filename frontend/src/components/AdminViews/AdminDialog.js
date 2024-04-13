@@ -12,8 +12,8 @@ import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import toast from 'react-hot-toast';
-import { api_client, fetchToken } from '../auth';
-import { getGroupsList } from '../api/groups';
+import { api_client, fetchToken } from '../../auth';
+import { getGroupsList } from '../../api/groups';
 
 export function NewAccountDialog(props) {
 

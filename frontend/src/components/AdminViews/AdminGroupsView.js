@@ -9,7 +9,7 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import AddIcon from '@mui/icons-material/Add';
 import { NewGroupDialog } from './AdminDialog';
-import { getGroupsList } from '../api/groups';
+import { getGroupsList } from '../../api/groups';
 
 
 export function AdminGroupsView() {

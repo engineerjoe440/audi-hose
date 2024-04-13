@@ -1,9 +1,9 @@
 import * as React from 'react';
 import { Box, Typography, Fab, Grid } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { CollapsibleTable } from './CollapsibleTable';
+import { CollapsibleTable } from '../CollapsibleTable';
 import { NewAccountDialog } from './AdminDialog';
-import { api_client, fetchToken } from '../auth';
+import { api_client, fetchToken } from '../../auth';
 
 export function AdminAccountsView(props) {
   const [accounts, setAccounts] = React.useState([]);

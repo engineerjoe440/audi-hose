@@ -73,12 +73,6 @@ const headCells = [
     disablePadding: true,
     label: 'Time',
   },
-  {
-    id: 'id',
-    numeric: false,
-    disablePadding: true,
-    label: 'ID',
-  },
 ];
 
 function EnhancedTableHead(props) {
@@ -354,12 +348,10 @@ export function AdminSubmissionGroup(props) {
                       scope="row"
                       padding="none"
                     >
-                      {row.name}
+                      {row.subject}
                     </TableCell>
-                    <TableCell>{row.calories}</TableCell>
-                    <TableCell>{row.fat}</TableCell>
-                    <TableCell>{row.carbs}</TableCell>
-                    <TableCell>{row.protein}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>{row.time}</TableCell>
                   </TableRow>
                 );
               })}

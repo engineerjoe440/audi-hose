@@ -22,7 +22,6 @@ export default function EmbedableRecorder(props) {
         audihoseUrl={props.audihoseUrl}
         onClose={handleClose}
       />
-      {console.log(props.audihoseUrl)}
     </div>
   );
 }

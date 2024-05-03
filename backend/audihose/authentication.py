@@ -18,16 +18,10 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from loguru import logger
 
-try:
-    from backend.sessions import get_session, close_session
-    from backend.database.models import Account, Login, NewAccountData
-    from backend.security import verify_token, check_password, sign_jwt
-    from backend.api.accounts import create_new_account
-except ImportError:
-    from sessions import get_session, close_session
-    from database.models import Account, Login, NewAccountData
-    from api.accounts import create_new_account
-    from security import verify_token, check_password, sign_jwt
+from .sessions import get_session, close_session
+from .database.models import Account, Login, NewAccountData
+from .security import verify_token, check_password, sign_jwt
+from .api.accounts import create_new_account
 
 
 router = APIRouter()

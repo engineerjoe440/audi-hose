@@ -15,12 +15,9 @@ from fastapi import APIRouter, File
 from fastapi.responses import StreamingResponse
 from pydantic import EmailStr
 
-try:
-    from backend.database.models import Recording, PublicationGroup
-    from backend.configuration import ConfigReader
-except ImportError:
-    from database.models import Recording, PublicationGroup
-    from configuration import ConfigReader
+from ..database.models import Recording, PublicationGroup
+from ..configuration import settings
+from ..notifier import send_email_message
 
 
 router = APIRouter(prefix="/recordings")
@@ -57,8 +54,7 @@ async def create_new_recording(
     """Create a New Recording."""
     recording_id = str(uuid4())
     # Store the File Contents
-    config = ConfigReader().set_attributes()
-    file_path = config.recordings_file_path / f"{recording_id}.wav"
+    file_path = settings.recordings_file_path / f"{recording_id}.wav"
     with open(file_path, 'wb') as dst_file_obj:
         dst_file_obj.write(recording)
     # Look Up the Group
@@ -76,6 +72,14 @@ async def create_new_recording(
 async def send_new_data_notification(recording_id: str):
     """Send the Notification of a New Recording."""
     recording = await Recording.get(id=recording_id)
-    for _ in recording.group.accounts:
+    subject = "New Recording!"
+    if recording.subject:
+        subject += f" '{recording.subject}'"
+    for account in recording.group.accounts:
         # Publish Notification for Account
-        ...
+        send_email_message(
+            subject=subject,
+            template="",
+            to_address=account.email,
+            #kwargs
+        )

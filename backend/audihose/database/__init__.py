@@ -12,14 +12,7 @@ from pathlib import Path
 
 from pydbantic import Database
 
-try:
-    from backend.database.models import (
-        Account, Login, Recording, PublicationGroup
-    )
-except ImportError:
-    from database.models import (
-        Account, Login, Recording, PublicationGroup
-    )
+from .models import Account, Login, Recording, PublicationGroup
 
 
 async def connect_database(

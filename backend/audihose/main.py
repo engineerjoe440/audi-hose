@@ -20,20 +20,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from loguru import logger
 
-try:
-    from backend import __header__, __version__, api, authentication
-    from backend.configuration import ConfigReader
-    from backend.database import connect_database, PublicationGroup
-    from backend.database.models import Account
-    from backend.sessions import SessionManager, get_session
-except ImportError:
-    import api
-    import authentication
-    from __init__ import __header__, __version__
-    from configuration import ConfigReader
-    from database import connect_database, PublicationGroup
-    from database.models import Account
-    from sessions import SessionManager, get_session
+from . import __header__, __version__, api, authentication
+from .configuration import ConfigReader
+from .database import connect_database
+from .database.models import Account
+from .sessions import SessionManager, get_session
 
 
 __html_header__ = __header__.replace("\n", r"\n")

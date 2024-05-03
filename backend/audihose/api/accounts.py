@@ -12,18 +12,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Cookie
 
-try:
-    from backend.database.models import (
-        Account, AccountWithGroups, Login, NewAccountData, PublicationGroup
-    )
-    from backend.security import get_hashed_password
-    from backend.sessions import get_session
-except ImportError:
-    from database.models import (
-        Account, AccountWithGroups, Login, NewAccountData, PublicationGroup
-    )
-    from security import get_hashed_password
-    from sessions import get_session
+from ..database.models import (
+    Account, AccountWithGroups, Login, NewAccountData, PublicationGroup
+)
+from ..security import get_hashed_password
+from ..sessions import get_session
 
 
 router = APIRouter(prefix="/accounts")

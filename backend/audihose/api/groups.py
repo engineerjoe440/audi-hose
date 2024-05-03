@@ -10,10 +10,7 @@ Author: Joe Stanley
 
 from fastapi import APIRouter
 
-try:
-    from backend.database.models import Account, PublicationGroup
-except ImportError:
-    from database.models import Account, PublicationGroup
+from ..database.models import Account, PublicationGroup
 
 
 router = APIRouter(prefix="/groups")

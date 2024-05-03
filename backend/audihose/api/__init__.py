@@ -8,15 +8,9 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from typing import Annotated
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends, Cookie
-from fastapi.responses import Response, RedirectResponse
-
-try:
-    from backend.api import recordings, accounts, groups
-except ImportError:
-    from api import recordings, accounts, groups
+from . import recordings, accounts, groups
 
 router = APIRouter(prefix="/api/v1")
 

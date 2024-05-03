@@ -126,7 +126,6 @@ export function CollapsibleTableRow(props) {
         <TableCell component="th" scope="row">
           {row.email}
         </TableCell>
-        <TableCell>{row.id}</TableCell>
         <TableCell align="right">
           <IconButton onClick={doRemoveAccount}>
             <DeleteIcon/>
@@ -160,7 +159,6 @@ export function CollapsibleTableRow(props) {
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
-                    <TableCell>ID</TableCell>
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -170,7 +168,6 @@ export function CollapsibleTableRow(props) {
                       <TableCell component="th" scope="row">
                         {associationRow.name}
                       </TableCell>
-                      <TableCell>{associationRow.id}</TableCell>
                       <TableCell align="right">
                         <IconButton onClick={() => {doRemoveGroup(associationRow.id)}}>
                           <DeleteIcon/>
@@ -213,7 +210,6 @@ export function CollapsibleTable({
               <TableCell />
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>ID</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>

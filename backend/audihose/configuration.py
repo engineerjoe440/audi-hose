@@ -7,10 +7,11 @@ License: AGPL-3.0
 Author: Joe Stanley
 """
 ################################################################################
-# pylint: disable=no-member
 
 import os
 from pathlib import Path
+
+from simple_toml_configurator import Configuration
 
 
 CONFIG_FILE_PATH = Path(os.getenv("CONFIG_FILE", "./config/app.conf"))
@@ -36,7 +37,8 @@ DEFAULT_CONFIGURATION = {
     }
 }
 
-class ConfigurationSettings:
+# pylint: disable=no-member
+class ConfigurationSettings(Configuration):
     """Base Configuration Data for Application."""
 
     @property
@@ -45,3 +47,8 @@ class ConfigurationSettings:
 
 
 settings = ConfigurationSettings()
+settings.init_config(
+    config_path=CONFIG_FILE_PATH,
+    defaults=DEFAULT_CONFIGURATION,
+    config_file_name="app"
+)

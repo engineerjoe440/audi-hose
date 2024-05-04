@@ -21,9 +21,9 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 
 from . import __header__, __version__, api, authentication
-from .configuration import ConfigReader
+from .configuration import settings
 from .database import connect_database
-from .database.models import Account
+from .database.models import Account, PublicationGroup
 from .sessions import SessionManager, get_session
 
 
@@ -69,7 +69,7 @@ app.add_middleware(
         "http://localhost",
         "http://localhost:8000", # Uvicorn Default Server
         "http://localhost:1313", # Hugo Default Server
-    ] + ConfigReader().set_attributes().cross_site_origins,
+    ] + settings.application.cross_site_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -22,7 +22,17 @@ services:
       - 8082:80
     restart: unless-stopped
     environment:
-      # - SITE_URL: https://audihose.example.com
+      # - APPLICATION_SITE_URL: https://audihose.example.com
+      # - APPLICATION_STORAGE_PATH: ./recordings
+      # - SMTP_SERVER: smtp.example.com
+      # - SMTP_PORT: 587
+      # - SMTP_STARTTLS: true
+      # - SMTP_USERNAME: audihoseemail
+      # - SMTP_PASSWORD: <insert your smtp password here>
+      # - SMTP_FROM_ADDRESS: audihose@example.com
+      # - NTFY_SERVER: https://ntfy.example.com
+      # - NTFY_TOPIC: audihose
+      # - NTFY_TOKEN: <insert your token here>
 ```
 
 ## Setup

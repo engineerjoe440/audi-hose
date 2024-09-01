@@ -8,6 +8,7 @@
         "hashpw",
         "jsonable",
         "loguru",
+        "ntfy",
         "Speakpipe",
         "templating"
     ]

@@ -7,6 +7,7 @@ License: AGPL-3.0
 Author: Joe Stanley
 """
 ################################################################################
+# pylint: disable=no-member
 
 from smtplib import SMTP
 from email.mime.text import MIMEText
@@ -14,6 +15,7 @@ from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
+import requests
 
 from .configuration import settings
 
@@ -71,3 +73,28 @@ def send_email_message(
     )
 
     smtp_connection.quit()
+
+def ntfy_publish(
+    message: str,
+    title: str = f"{settings.application.site_url} Alert",
+    priority: str = "default",
+    tags: list[str] | None = None,
+):
+    """Publish a Message on the ntfy.sh System."""
+    if settings.ntfy.server:
+        # Set and Configure Headers Based on Loaded Data
+        ntfy_headers = {"Title": title,}
+        if priority:
+            ntfy_headers["Priority"] = priority
+        if tags:
+            ntfy_headers["Tags"] = ",".join(tags)
+        if settings.ntfy.token:
+            # Set Authentication Token as Needed
+            ntfy_headers["Authorization"] = f"Bearer {settings.ntfy.token}"
+        requests.post(
+            f"{settings.ntfy.server}/{settings.ntfy.topic}",
+            data=message,
+            headers=ntfy_headers,
+            timeout=60,
+        )
+

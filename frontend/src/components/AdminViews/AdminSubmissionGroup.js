@@ -197,46 +197,47 @@ export function AdminSubmissionGroup(props) {
   const [rows, setRows] = React.useState([]);
 
   React.useEffect(()=>{
+
+    const getPublicationGroup = () => {
+      api_client.get(`groups/${props.group}`, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${fetchToken()}`
+        },
+      }).then(res => res.data).then(jsonData => {
+        // Record the Publication Group
+        setPubGroup(jsonData);
+      })
+      .catch((error) => {
+        if( error.response ){
+          console.log(error.response.data); // => the response payload
+        }
+      });
+    }
+  
+    const getRecordingRows = () => {
+      api_client.get(`recordings/group/${props.group}`, {
+        withCredentials: true,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${fetchToken()}`
+        },
+      }).then(res => res.data).then(jsonData => {
+        // Record the Recordings
+        setRows(jsonData);
+      })
+      .catch((error) => {
+        if( error.response ){
+          console.log(error.response.data); // => the response payload
+        }
+      });
+    }
+
     // Load Requisites when page Completes
     getPublicationGroup();
     getRecordingRows();
   },[props.group]);
-
-  const getPublicationGroup = () => {
-    api_client.get(`groups/${props.group}`, {
-      withCredentials: true,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${fetchToken()}`
-      },
-    }).then(res => res.data).then(jsonData => {
-      // Record the Publication Group
-      setPubGroup(jsonData);
-    })
-    .catch((error) => {
-      if( error.response ){
-        console.log(error.response.data); // => the response payload
-      }
-    });
-  }
-
-  const getRecordingRows = () => {
-    api_client.get(`recordings/group/${props.group}`, {
-      withCredentials: true,
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${fetchToken()}`
-      },
-    }).then(res => res.data).then(jsonData => {
-      // Record the Recordings
-      setRows(jsonData);
-    })
-    .catch((error) => {
-      if( error.response ){
-        console.log(error.response.data); // => the response payload
-      }
-    });
-  }
 
   const handleRequestSort = (event, property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -293,7 +294,7 @@ export function AdminSubmissionGroup(props) {
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage,
       ),
-    [order, orderBy, page, rowsPerPage],
+    [order, orderBy, page, rowsPerPage, rows],
   );
 
   return (

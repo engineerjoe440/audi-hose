@@ -14,7 +14,7 @@ from pathlib import Path
 from simple_toml_configurator import Configuration
 
 
-CONFIG_FILE_PATH = Path(os.getenv("CONFIG_FILE", "./config/app.conf"))
+CONFIG_FILE_PATH = Path(os.getenv("CONFIG_FILE", "./config"))
 
 DEFAULT_CONFIGURATION = {
     "application": {
@@ -44,6 +44,11 @@ class ConfigurationSettings(Configuration):
     @property
     def recordings_file_path(self) -> Path:
         """Evaluate the Correct Path, and Confirm that it Exists."""
+        if not self.application.storage_path:
+            self.application.storage_path = "./recordings"
+        storage = Path(self.application.storage_path)
+        storage.mkdir(parents=True, exist_ok=True)
+        return storage
 
 
 settings = ConfigurationSettings()

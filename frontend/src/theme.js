@@ -4,7 +4,6 @@
  * Theme control file for managing the basic light/dark theme for application.
  ******************************************************************************/
 
-import { green } from '@mui/material/colors';
 import { styled } from '@mui/material/styles';
 import { Paper } from '@mui/material';
 

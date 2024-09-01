@@ -7,6 +7,7 @@ License: AGPL-3.0
 Author: Joe Stanley
 """
 ################################################################################
+# pylint: disable=no-member
 
 import datetime
 from typing import Annotated
@@ -25,6 +26,7 @@ from .configuration import settings
 from .database import connect_database
 from .database.models import Account, PublicationGroup
 from .sessions import SessionManager, get_session
+from .notifier import ntfy_publish
 
 
 __html_header__ = __header__.replace("\n", r"\n")
@@ -68,7 +70,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost",
         "http://localhost:8000", # Uvicorn Default Server
-        "http://localhost:1313", # Hugo Default Server
     ] + settings.application.cross_site_origins,
     allow_credentials=True,
     allow_methods=["*"],
@@ -140,7 +141,7 @@ async def component_root(
             APP_COOKIE_NAME: client_token,
             "console_app_name": __html_header__,
             "year": datetime.datetime.now().year,
-            "host_url": ConfigReader().set_attributes().site_url,
+            "host_url": settings.application.site_url,
             "default_group_id": DEFAULT_GROUP_ID,
         },
     )
@@ -188,7 +189,7 @@ async def validation_exception_handler(request: Request, exc: Exception):
     except (AttributeError, KeyError):
         email_desc = ""
     # Alert Subscribers to the Exception
-    ConfigReader().set_attributes().ntfy(
+    ntfy_publish(
         message=(
             f"Failed HTTP Method: {request.method} at URL: {request.url}.\n"
             f"{email_desc}Exception Message: {exc!r}"

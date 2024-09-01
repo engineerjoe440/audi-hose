@@ -43,12 +43,15 @@ function stringToColor(string) {
 }
 
 function stringAvatar(name) {
+  // Extract First Letter of Each Word
+  const nameComponents = name.split(' ').map((name) => {return name[0];});
+
   return {
     sx: {
       bgcolor: stringToColor(name),
       color: '#fff',
     },
-    children: `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`,
+    children: nameComponents.join(""),
   };
 }
 

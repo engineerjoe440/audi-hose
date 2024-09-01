@@ -11,9 +11,6 @@ RUN yarn run build
 # Dockerfile for Audi-Hose
 FROM python:3.12
 
-LABEL org.opencontainers.image.authors="engineerjoe440@yahoo.com"
-LABEL version="0.0.0"
-
 WORKDIR /server
 
 COPY ./backend /server
@@ -23,5 +20,5 @@ COPY --from=uibuilder /backend /server
 
 RUN pip install --no-cache-dir --upgrade -r /server/requirements.txt
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--log-config", "log_conf.yml", "--forwarded-allow-ips", "'*'"]
+CMD ["uvicorn", "audihose.main:app", "--host", "0.0.0.0", "--port", "80", "--forwarded-allow-ips", "'*'"]
 

@@ -1,6 +1,7 @@
 <img src="https://raw.githubusercontent.com/engineerjoe440/audi-hose/main/logo/audihose-logo.png" width="250" alt="logo" align="right">
 
 # audi-hose
+
 Connecting audiences to the creators they love with easy audio.
 
 ## Installation
@@ -22,6 +23,7 @@ services:
       - 8082:80
     restart: unless-stopped
     environment:
+      # Optional Configuration Parameters
       # - APPLICATION_SITE_URL: https://audihose.example.com
       # - APPLICATION_STORAGE_PATH: ./recordings
       # - SMTP_SERVER: smtp.example.com
@@ -33,6 +35,9 @@ services:
       # - NTFY_SERVER: https://ntfy.example.com
       # - NTFY_TOPIC: audihose
       # - NTFY_TOKEN: <insert your token here>
+    volumes:
+      - ./config:/server/config
+      - ./recordings:/server/recordings
 ```
 
 ## Setup
@@ -43,7 +48,38 @@ services:
 
 ## Development
 
-### Linking frontend and backend (React/FastAPI):
+### Linking frontend and backend (React/FastAPI)
+
+Developing Audi-Hose should be relatively simple. It falls into a few general
+steps. Install the `npm` dependencies, build the frontend, install the `python`
+dependencies, then run the backend.
+
 With some minor modifications made to the FastAPI configuration,
 [this guide on using Flask and React](https://blog.learningdollars.com/2019/11/29/how-to-serve-a-reactapp-with-a-flask-server/)
 was used to develop the link between the two ecosystems.
+
+### Installing Frontend (`npm`) Dependencies
+
+1. `cd` to the `frontend/` folder.
+2. Run the command: `yarn install` (requires [yarn](https://classic.yarnpkg.com/lang/en/docs/install/))
+
+### Building Frontend
+
+1. `cd` to the `frontend/` folder.
+2. Run the command `yarn build`. This will generate all of the Javascript/CSS
+files needed in the `backend/audihose/static/react/` folder, and the `index.html`
+in `backend/audihose/templates/`.
+
+### Installing Backend (`python`) Dependencies
+
+1. Create a Python Virtual Environment with `python3 -m venv venv`.
+2. Activate the virtual environment.
+3. Run the command `pip install -r backend/requirements.txt`
+
+### Run the Application
+
+1. `cd` to the `backend/` folder.
+2. Run the command: `uvicorn audihose.main:app --reload --host 0.0.0.0`. This
+will expose the application on all interfaces on the computer running the app.
+This will allow you to test the app from other local devices.
+

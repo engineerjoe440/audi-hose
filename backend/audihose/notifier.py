@@ -97,4 +97,3 @@ def ntfy_publish(
             headers=ntfy_headers,
             timeout=60,
         )
-

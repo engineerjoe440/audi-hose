@@ -1,11 +1,8 @@
 # Database
-/*/db/
-/*/config/
-/*/recordings/
-backend/static/react/
-backend/templates/index.html
-backend/audihose/static/react/
-backend/audihose/templates/index.html
+config/
+recordings/
+audihose/static/react/
+audihose/templates/index.html
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

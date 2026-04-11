@@ -17,11 +17,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from loguru import logger
+from sqlmodel import select
 
 from .sessions import get_session, close_session
-from .database.models import Account, Login, NewAccountData
+from .database import Account, Login, NewAccountData, SessionDependency
 from .security import verify_token, check_password, sign_jwt
-from .api.accounts import create_new_account
+from .api.accounts import create_account
 
 
 router = APIRouter()
@@ -69,13 +70,13 @@ class JWTBearer(HTTPBearer):
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token or expired token."
                 )
-            if (session := get_session(credentials.credentials)):
+            # Check that Session is Still Active
+            if not (_ := get_session(credentials.credentials)):
                 logger.warning("Session Expired.")
-                if not session:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Session Expired."
-                    )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Session Expired."
+                )
             return credentials.credentials
         # Otherwise
         logger.warning("Invalid authorization code.")
@@ -90,10 +91,13 @@ class JWTBearer(HTTPBearer):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def user_login(login_item: LoginItem) -> TokenResponse:
+def user_login(
+    login_item: LoginItem,
+    session: SessionDependency,
+) -> TokenResponse:
     """Authenticate admin user and provide a JSON Web Token."""
-    session = get_session(client_token=login_item.client_token)
-    if not session:
+    user_session = get_session(client_token=login_item.client_token)
+    if not user_session:
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
             detail="could not identify active session object, please reload",
@@ -107,24 +111,23 @@ async def user_login(login_item: LoginItem) -> TokenResponse:
 
     try:
         # Obtain the Account Corresponding to the User Email
-        accounts = await Account.filter(email=email)
-        if accounts:
-            # Verify Password
-            for account in accounts:
-                if account.id is None:
-                    continue
-                login_db_entry = await Login.get(id=account.id)
-                if check_password(password, login_db_entry.hashed_password):
-                    # Validated Account - Sign Token
-                    response.token = sign_jwt({
-                        "email": email,
-                        "id": account.id,
-                        "session": session.client_token,
-                    })
-                    response.message = None
-                    # Set Session Parameters
-                    session.email = email
-                    session.account_id = account.id
+        account = session.exec(
+            select(Account).where(Account.email == email)
+        ).first()
+        if account and account.id is not None:
+            login_db_entry = session.get(Login, account.id)
+            if login_db_entry and check_password(
+                password,
+                login_db_entry.hashed_password,
+            ):
+                response.token = sign_jwt({
+                    "email": email,
+                    "id": account.id,
+                    "session": user_session.client_token,
+                })
+                response.message = None
+                user_session.email = email
+                user_session.account_id = account.id
     except ValueError as err:
         response.message = (
             f"Server failure: '{err}'\n"
@@ -138,7 +141,7 @@ async def user_login(login_item: LoginItem) -> TokenResponse:
     dependencies=[Depends(JWTBearer())],
     response_model=TokenResponse
 )
-async def refresh_token(
+def refresh_token(
     client_token: Annotated[str | None, Cookie()] = None
 ) -> TokenResponse:
     """Refresh the JSON Web Token for an Authenticated admin User."""
@@ -154,33 +157,38 @@ async def refresh_token(
     return token
 
 @router.post("/logout", dependencies=[Depends(JWTBearer())])
-async def logout(client_token: Annotated[str | None, Cookie()] = None):
+def logout(client_token: Annotated[str | None, Cookie()] = None):
     """Log Active User Out of System."""
     if client_token:
         close_session(client_token=client_token)
 
 @router.get("/signup-required")
-async def determine_signup_status() -> bool:
+def determine_signup_status(session: SessionDependency) -> bool:
     """Determine Whether a User Must be Created, First."""
-    return (await Account.count()) == 0
+    return session.exec(select(Account.id)).first() is None
 
 @router.post("/create-initial-account")
-async def create_initial_account(
+def create_initial_account(
     initial_account_data: NewAccountData,
-    client_token: Annotated[str | None, Cookie()] = None
+    session: SessionDependency,
+    client_token: Annotated[str | None, Cookie()] = None,
 ) -> TokenResponse:
     """Create the Very First Account."""
-    if await determine_signup_status():
-        account_id = await create_new_account(account_data=initial_account_data)
+    if session.exec(select(Account.id)).first() is None:
+        account_id = create_account(
+            session=session,
+            account_data=initial_account_data,
+        )
         token = TokenResponse()
-        session = get_session(client_token=client_token)
+        user_session = get_session(client_token=client_token)
         token.token = sign_jwt({
             "email": initial_account_data.email,
             "id": account_id,
             "session": client_token,
         })
-        session.email = initial_account_data.email
-        session.account_id = account_id
+        if user_session is not None:
+            user_session.email = initial_account_data.email
+            user_session.account_id = account_id
         return token
     raise HTTPException(
         status_code=status.HTTP_423_LOCKED,

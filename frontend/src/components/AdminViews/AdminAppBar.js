@@ -1,6 +1,6 @@
 /*******************************************************************************
  * AppBar.js
- * 
+ *
  * Application bar (header-bar) to provide selection options for the various
  * "things" that should be accessible in the application.
  ******************************************************************************/
@@ -15,11 +15,13 @@ import MenuIcon from '@mui/icons-material/Menu';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Fade from '@mui/material/Fade';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
 import Tooltip from '@mui/material/Tooltip';
 import Link from '@mui/material/Link';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
 import { clearToken, logout } from '../../auth';
 
 function stringToColor(string) {
@@ -42,14 +44,14 @@ function stringToColor(string) {
   return color;
 }
 
-function stringAvatar(name) {
+function stringAvatar(name, theme) {
   // Extract First Letter of Each Word
   const nameComponents = name.split(' ').map((name) => {return name[0];});
 
   return {
     sx: {
       bgcolor: stringToColor(name),
-      color: '#fff',
+      color: theme.palette.getContrastText(stringToColor(name)),
     },
     children: nameComponents.join(""),
   };
@@ -57,10 +59,12 @@ function stringAvatar(name) {
 
 export default function AdminAppBar({
   title,
-  mode,
+  themeId,
+  themeOptions,
   onLoad,
-  onThemeChange, // called every time the user clicks the LightDarkSwitch
+  onThemeChange,
 }) {
+  const theme = useTheme();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const menuOpen = Boolean(anchorEl);
@@ -97,12 +101,17 @@ export default function AdminAppBar({
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
-  
+
   const handleLogout = () => {
     handleCloseUserMenu();
     logout();
     clearToken();
     window.location.href = "/";
+  }
+
+  const handleThemeSelection = (newThemeId) => {
+    onThemeChange(newThemeId);
+    handleCloseUserMenu();
   }
 
   return (
@@ -146,16 +155,11 @@ export default function AdminAppBar({
               </Link>
             }
           </Typography>
-          <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-            <Tooltip title={mode === 'dark' ? "Light Mode" : "Dark Mode"}>
-              <IconButton sx={{ ml: 1 }} onClick={onThemeChange} color="inherit">
-                {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-              </IconButton>
-            </Tooltip>
+          <Box sx={{ display: { xs: 'flex', md: 'flex' } }}>
             <Box sx={{ flexGrow: 0 }}>
             <Tooltip title="Open settings">
               <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar {...stringAvatar(`${window.account_name}`)} />
+                <Avatar {...stringAvatar(`${window.account_name}`, theme)} />
               </IconButton>
             </Tooltip>
             <Menu
@@ -181,6 +185,25 @@ export default function AdminAppBar({
               >
                 <Typography textAlign="center">User Settings</Typography>
               </MenuItem> */}
+              <MenuItem disableRipple sx={{ cursor: 'default', minWidth: 260 }}>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="user-theme-select-label">Theme</InputLabel>
+                  <Select
+                    labelId="user-theme-select-label"
+                    id="user-theme-select"
+                    value={themeId}
+                    label="Theme"
+                    onClick={(event) => {event.stopPropagation();}}
+                    onChange={(event) => {handleThemeSelection(event.target.value)}}
+                  >
+                    {themeOptions.map((themeOption) => (
+                      <MenuItem key={themeOption.id} value={themeOption.id}>
+                        {themeOption.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </MenuItem>
               <MenuItem key="logout" onClick={handleLogout}>
                 <Typography textAlign="center">Logout</Typography>
               </MenuItem>

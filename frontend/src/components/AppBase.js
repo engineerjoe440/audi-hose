@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { Box } from "@mui/material";
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "../theme";
+import { THEME_OPTIONS, getDesignTokens, getSavedThemeMode, setSavedThemeMode } from "../theme";
 import CssBaseline from '@mui/material/CssBaseline';
 import AdminAppBar from './AdminViews/AdminAppBar';
 import AdminAppDrawer from './AdminViews/AdminAppDrawer';
@@ -14,8 +14,8 @@ const drawerWidth = 220;
 export default function AppBase({bannerTitle, onNavigate, children}) {
   const [myAccount, setMyAccount] = React.useState(null);
   const [pageLoadComplete, setPageLoadComplete] = React.useState(false);
-  const [mode, setMode] = React.useState(getSavedThemeMode());
-  const [theme, setTheme] = React.useState(createTheme(getDesignTokens(mode)));
+  const [themeId, setThemeId] = React.useState(getSavedThemeMode());
+  const [theme, setTheme] = React.useState(createTheme(getDesignTokens(themeId)));
 
   React.useEffect(()=>{
     // Load Requisites when page Completes
@@ -44,24 +44,29 @@ export default function AppBase({bannerTitle, onNavigate, children}) {
   const setDefaultTheme = (themePreference) => {
     // Set the default color profile - only if we haven't done so before!
     if (!pageLoadComplete) {
-      var defaultTheme = getSavedThemeMode();
-      if (defaultTheme === null){
-        defaultTheme = (themePreference ? 'dark' : 'light');
-        setSavedThemeMode(defaultTheme);
-      }
-      setMode(defaultTheme);
-      document.documentElement.setAttribute('data-color-mode', defaultTheme);
-      setTheme(createTheme(getDesignTokens(defaultTheme)));
+      const fallbackThemeId = (themePreference ? 'studioNight' : 'warmBroadcast');
+      const defaultThemeId = getSavedThemeMode(fallbackThemeId);
+
+      setSavedThemeMode(defaultThemeId);
+      setThemeId(defaultThemeId);
+      document.documentElement.setAttribute(
+        'data-color-mode',
+        createTheme(getDesignTokens(defaultThemeId)).palette.mode
+      );
+      setTheme(createTheme(getDesignTokens(defaultThemeId)));
       setPageLoadComplete(true);
     }
   }
 
   // Theme Changer Function
-  const toggleThemeSetting = () => {
-    var newTheme = (mode === 'light' ? 'dark' : 'light');
-    setSavedThemeMode(newTheme);
-    setMode(newTheme);
-    setTheme(createTheme(getDesignTokens(newTheme)));
+  const setThemeSetting = (newThemeId) => {
+    setSavedThemeMode(newThemeId);
+    setThemeId(newThemeId);
+    document.documentElement.setAttribute(
+      'data-color-mode',
+      createTheme(getDesignTokens(newThemeId)).palette.mode
+    );
+    setTheme(createTheme(getDesignTokens(newThemeId)));
   }
 
   return (
@@ -76,9 +81,10 @@ export default function AppBase({bannerTitle, onNavigate, children}) {
           <Box sx={{ display: 'flex' }}>
             <AdminAppBar
                 title={bannerTitle}
-                mode={mode}
+              themeId={themeId}
+              themeOptions={THEME_OPTIONS}
                 onLoad={setDefaultTheme}
-                onThemeChange={toggleThemeSetting}
+              onThemeChange={setThemeSetting}
             />
             <AdminAppDrawer
               drawerWidth={drawerWidth}

@@ -176,8 +176,7 @@ export default function LoginPortal() {
           sx={{
             backgroundImage: 'url(/static/react/audihose-logo-large.png)',
             backgroundRepeat: 'no-repeat',
-            backgroundColor: (t) =>
-              t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
+            backgroundColor: 'background.default',
             backgroundSize: 'contain',
             backgroundPosition: 'center',
           }}

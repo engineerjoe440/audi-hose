@@ -29,13 +29,30 @@ from .database import (
     create_database_tables,
     DEFAULT_GROUP_ID,
 )
-from .sessions import SessionManager, get_session
+from .sessions import (
+    SessionManager,
+    get_session,
+    REMEMBER_ME_INACTIVITY_SECONDS,
+)
 from .notifier import ntfy_publish
 
 
 __html_header__ = __header__.replace("\n", r"\n")
 
 APP_COOKIE_NAME = "client_token"
+
+
+def _set_session_cookie(response: HTMLResponse, client_token: str):
+    """Apply cookie persistence policy based on session remember-me state."""
+    active_session = get_session(client_token=client_token)
+    if active_session and active_session.remember_me:
+        response.set_cookie(
+            APP_COOKIE_NAME,
+            client_token,
+            max_age=REMEMBER_ME_INACTIVITY_SECONDS,
+        )
+    else:
+        response.set_cookie(APP_COOKIE_NAME, client_token)
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -88,15 +105,18 @@ def root(
 ) -> HTMLResponse:
     """Server Root."""
     template = "index.html"
+    active_session = get_session(client_token=client_token) if client_token else None
     if not client_token:
         client_token = SessionManager.create_session()
-        template="landing.html"
-    elif not get_session(client_token=client_token):
+        active_session = get_session(client_token=client_token)
+        template = "landing.html"
+    elif not active_session:
         client_token = SessionManager.create_session()
-        template="landing.html"
-    elif get_session(client_token=client_token).email is None:
-        template="landing.html"
-    account_id = get_session(client_token=client_token).account_id
+        active_session = get_session(client_token=client_token)
+        template = "landing.html"
+    elif active_session.email is None:
+        template = "landing.html"
+    account_id = active_session.account_id if active_session else None
     context = {
         "request": request,
         APP_COOKIE_NAME: client_token,
@@ -113,7 +133,7 @@ def root(
         template,
         context=context,
     )
-    response.set_cookie(APP_COOKIE_NAME, client_token)
+    _set_session_cookie(response, client_token)
     return response
 
 
@@ -123,9 +143,10 @@ def component_root(
     client_token: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Server Root."""
+    active_session = get_session(client_token=client_token) if client_token else None
     if not client_token:
         client_token = SessionManager.create_session()
-    elif not get_session(client_token=client_token):
+    elif not active_session:
         client_token = SessionManager.create_session()
     # Fall Back to Landing Page
     response = TEMPLATES.TemplateResponse(
@@ -140,7 +161,7 @@ def component_root(
             "default_group_id": DEFAULT_GROUP_ID,
         },
     )
-    response.set_cookie(APP_COOKIE_NAME, client_token)
+    _set_session_cookie(response, client_token)
     return response
 
 @app.get("/component.js", response_class=RedirectResponse, include_in_schema=False)
@@ -155,9 +176,10 @@ def app_base(
     client_token: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Application Base."""
+    active_session = get_session(client_token=client_token) if client_token else None
     if not client_token:
         client_token = SessionManager.create_session()
-    elif not get_session(client_token=client_token):
+    elif not active_session:
         client_token = SessionManager.create_session()
     # Fall Back to Landing Page
     response = TEMPLATES.TemplateResponse(
@@ -169,7 +191,7 @@ def app_base(
             "console_app_name": __html_header__,
         },
     )
-    response.set_cookie(APP_COOKIE_NAME, client_token)
+    _set_session_cookie(response, client_token)
     return response
 
 ################################################################################

@@ -33,9 +33,12 @@ def check_password(plain_text_password: str, hashed_password: str) -> bool:
         plain_text_password.encode("utf-8"),
         hashed_password.encode("utf-8"))
 
-def sign_jwt(payload: dict) -> dict[str, str]:
+def sign_jwt(
+    payload: dict,
+    expiry_seconds: int = JWT_EXPIRY_LENGTH,
+) -> dict[str, str]:
     """Generate a JSON Web Token (assuming valid authentication)."""
-    payload["expires"] = time.time() + JWT_EXPIRY_LENGTH
+    payload["expires"] = time.time() + expiry_seconds
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
 

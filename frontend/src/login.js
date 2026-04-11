@@ -1,6 +1,6 @@
 /*******************************************************************************
  * login.js
- * 
+ *
  * Authentication page view.
  ******************************************************************************/
 
@@ -18,15 +18,23 @@ import {
   FormControlLabel,
   Checkbox,
   Paper,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { getDesignTokens, getSavedThemeMode } from "./theme";
-import { fetchToken, setToken, refreshTokenCall } from './auth';
+import {
+  fetchToken,
+  setToken,
+  refreshTokenCall,
+  getPostLoginRedirectTarget,
+} from './auth';
 import axios from "axios";
 
 export const client = axios.create({
-  baseURL: "/" 
+  baseURL: "/"
 });
 
 export function Copyright(props) {
@@ -91,6 +99,7 @@ export default function LoginPortal() {
       email: data.get('email'),
       password: data.get('password'),
       client_token: window.client_token,
+      remember_me: data.get('remember-me') !== null,
     }).then((response) => {
       console.log(response);
       if (response.data.message !== null) {
@@ -99,8 +108,8 @@ export default function LoginPortal() {
         setToken(response.data.token);
         setLoginAlert("");
 
-        // Redirect to Admin
-        window.location.href = "/";
+        // Redirect to preserved secure destination when provided.
+        window.location.href = getPostLoginRedirectTarget("/");
       }
     })
     .catch((error) => {
@@ -136,6 +145,27 @@ export default function LoginPortal() {
 
   return (
     <ThemeProvider theme={theme}>
+      <Tooltip title="Return to Main Site">
+        <IconButton
+          aria-label="Close login and return to main site"
+          onClick={() => {
+            window.location.href = '/';
+          }}
+          sx={{
+            position: 'fixed',
+            top: 12,
+            right: 12,
+            zIndex: (t) => t.zIndex.modal + 1,
+            bgcolor: 'background.paper',
+            boxShadow: 3,
+            '&:hover': {
+              bgcolor: 'background.default',
+            },
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      </Tooltip>
       <Grid container component="main" sx={{ height: '100vh' }}>
         <CssBaseline />
         <Grid
@@ -195,8 +225,8 @@ export default function LoginPortal() {
                 autoComplete="current-password"
               />
               <FormControlLabel
-                control={<Checkbox value="remember" color="primary" />}
-                label="Remember me"
+                control={<Checkbox name="remember-me" value="remember" color="primary" />}
+                label="Remember me for 30 days"
               />
               <Button
                 type="submit"

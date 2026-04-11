@@ -15,13 +15,54 @@ const TOKEN_NAME = 'audi-hose-token';
 export const setToken = (token) => {
    localStorage.setItem(TOKEN_NAME, token);
 }
- 
+
 export const fetchToken = () => {
    return localStorage.getItem(TOKEN_NAME);
 }
 
 export const clearToken = () => {
    localStorage.removeItem(TOKEN_NAME);
+}
+
+function isSecureRedirectPath(pathname) {
+  return pathname === "/";
+}
+
+export function sanitizeRedirectTarget(target) {
+  if (!target) {
+    return null;
+  }
+
+  try {
+    const url = new URL(target, window.location.origin);
+
+    if (url.origin !== window.location.origin || !isSecureRedirectPath(url.pathname)) {
+      return null;
+    }
+
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getLoginRedirectUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const existingRedirect = sanitizeRedirectTarget(params.get("redirect"));
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  const currentSecureRedirect = sanitizeRedirectTarget(currentPath);
+  const redirectTarget = existingRedirect || currentSecureRedirect;
+
+  if (!redirectTarget) {
+    return "/login";
+  }
+
+  return `/login?redirect=${encodeURIComponent(redirectTarget)}`;
+}
+
+export function getPostLoginRedirectTarget(defaultTarget = "/") {
+  const params = new URLSearchParams(window.location.search);
+  return sanitizeRedirectTarget(params.get("redirect")) || defaultTarget;
 }
 
 export function refreshTokenCall({
@@ -41,14 +82,14 @@ export function refreshTokenCall({
       // Timed Out? Goodbye! Go back to start.
       clearToken();
       if (redirect) {
-        window.location.href = "/login";
+        window.location.href = getLoginRedirectUrl();
       }
       console.log(res.data);
     } else if ( res.status === 403 ) {
       // Timed Out? Goodbye! Go back to start.
       clearToken();
       if (redirect) {
-        window.location.href = "/login";
+        window.location.href = getLoginRedirectUrl();
       }
       console.log(res);
     } else {
@@ -67,7 +108,7 @@ export function refreshTokenCall({
       console.log(error.response.data); // => the response payload
     }
     if (redirect) {
-      window.location.href = "/login";
+      window.location.href = getLoginRedirectUrl();
     }
     return Promise.reject(error.message);
   });
@@ -110,13 +151,13 @@ api_client.interceptors.request.use((config) => {
 
 api_client.interceptors.response.use((response) => {
   refreshTokenCall({redirect: true});
-  
+
   // Return the Regular Response
   return response;
 });
- 
+
 export function RequireToken({children}){
- 
+
    refreshTokenCall({redirect: true});
    let auth = fetchToken();
    let location = useLocation()

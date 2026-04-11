@@ -11,7 +11,7 @@ Author: Joe Stanley
 from typing import Annotated, Union
 
 from fastapi import (
-    Request, APIRouter, HTTPException, status, Query, Cookie, Depends
+    Request, APIRouter, HTTPException, status, Query, Cookie, Depends, Response
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
@@ -19,9 +19,13 @@ from pydantic import BaseModel
 from loguru import logger
 from sqlmodel import select
 
-from .sessions import get_session, close_session
+from .sessions import (
+    get_session,
+    close_session,
+    REMEMBER_ME_INACTIVITY_SECONDS,
+)
 from .database import Account, Login, NewAccountData, SessionDependency
-from .security import verify_token, check_password, sign_jwt
+from .security import verify_token, decode_jwt, check_password, sign_jwt
 from .api.accounts import create_account
 
 
@@ -33,11 +37,31 @@ class LoginItem(BaseModel):
     email: str
     password: str
     client_token: str
+    remember_me: bool = False
 
 class TokenResponse(BaseModel):
     """JSON Web Token Response for Authentication."""
     token: Union[str, None] = None
     message: Union[str, None] = None
+
+
+COOKIE_NAME = "client_token"
+
+
+def _set_client_cookie(
+    response: Response,
+    client_token: str,
+    remember_me: bool,
+):
+    """Set client token persistence based on remember-me mode."""
+    if remember_me:
+        response.set_cookie(
+            COOKIE_NAME,
+            client_token,
+            max_age=REMEMBER_ME_INACTIVITY_SECONDS,
+        )
+    else:
+        response.set_cookie(COOKIE_NAME, client_token)
 
 
 async def get_query_token(
@@ -71,7 +95,9 @@ class JWTBearer(HTTPBearer):
                     detail="Invalid token or expired token."
                 )
             # Check that Session is Still Active
-            if not (_ := get_session(credentials.credentials)):
+            token_payload = decode_jwt(credentials.credentials)
+            session_token = token_payload.get("session") if token_payload else None
+            if not session_token or not get_session(session_token):
                 logger.warning("Session Expired.")
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -93,6 +119,7 @@ class JWTBearer(HTTPBearer):
 @router.post("/login", response_model=TokenResponse)
 def user_login(
     login_item: LoginItem,
+    response: Response,
     session: SessionDependency,
 ) -> TokenResponse:
     """Authenticate admin user and provide a JSON Web Token."""
@@ -107,7 +134,8 @@ def user_login(
     email = data["email"]
     password = data["password"]
 
-    response = TokenResponse(message="Invalid Credentials.")
+    login_response = TokenResponse(message="Invalid Credentials.")
+    remember_me = bool(data.get("remember_me", False))
 
     try:
         # Obtain the Account Corresponding to the User Email
@@ -120,21 +148,27 @@ def user_login(
                 password,
                 login_db_entry.hashed_password,
             ):
-                response.token = sign_jwt({
+                user_session.configure_authenticated(remember_me=remember_me)
+                login_response.token = sign_jwt({
                     "email": email,
                     "id": account.id,
                     "session": user_session.client_token,
-                })
-                response.message = None
+                }, expiry_seconds=user_session.jwt_expiry_seconds)
+                login_response.message = None
                 user_session.email = email
                 user_session.account_id = account.id
+                _set_client_cookie(
+                    response,
+                    client_token=user_session.client_token,
+                    remember_me=remember_me,
+                )
     except ValueError as err:
-        response.message = (
+        login_response.message = (
             f"Server failure: '{err}'\n"
             "If this issue persists, contact administrator."
         )
         logger.exception(err)
-    return response
+    return login_response
 
 @router.post(
     "/refresh-token",
@@ -142,6 +176,7 @@ def user_login(
     response_model=TokenResponse
 )
 def refresh_token(
+    response: Response,
     client_token: Annotated[str | None, Cookie()] = None
 ) -> TokenResponse:
     """Refresh the JSON Web Token for an Authenticated admin User."""
@@ -149,11 +184,16 @@ def refresh_token(
     if client_token:
         session = get_session(client_token=client_token)
         if session:
+            _set_client_cookie(
+                response,
+                client_token=session.client_token,
+                remember_me=session.remember_me,
+            )
             token.token = sign_jwt({
                 "email": session.email,
                 "id": session.account_id,
                 "session": session.client_token,
-            })
+            }, expiry_seconds=session.jwt_expiry_seconds)
     return token
 
 @router.post("/logout", dependencies=[Depends(JWTBearer())])

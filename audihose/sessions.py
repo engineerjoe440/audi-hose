@@ -16,7 +16,10 @@ from datetime import datetime, timedelta
 from pydantic import EmailStr
 
 
-ALLOWED_INACTIVITY_PERIOD = timedelta(minutes=30)
+DEFAULT_INACTIVITY_PERIOD = timedelta(minutes=30)
+REMEMBER_ME_INACTIVITY_PERIOD = timedelta(days=30)
+DEFAULT_INACTIVITY_SECONDS = int(DEFAULT_INACTIVITY_PERIOD.total_seconds())
+REMEMBER_ME_INACTIVITY_SECONDS = int(REMEMBER_ME_INACTIVITY_PERIOD.total_seconds())
 
 
 class UserSession:
@@ -25,13 +28,17 @@ class UserSession:
     last_access: datetime
     _email: EmailStr
     _account_id: str
+    remember_me: bool
+    inactivity_period: timedelta
 
     def __init__(self):
         """Record the Client Token for this Session."""
         self.client_token = str(uuid4())
         self._email = None
         self._account_id = None
-        self._accessed()
+        self.remember_me = False
+        self.inactivity_period = DEFAULT_INACTIVITY_PERIOD
+        self.access()
 
     def __eq__(self, __value: object) -> bool:
         """Equivalence is Based on `client_token` of Object."""
@@ -41,7 +48,7 @@ class UserSession:
             return __value == self.client_token
         return False
 
-    def _accessed(self):
+    def access(self):
         """Record the Access Time."""
         self.last_access = datetime.now()
 
@@ -68,7 +75,7 @@ class UserSession:
     @property
     def stale(self) -> bool:
         """Indicator that User Session has Remained Unused for Some Time."""
-        if (datetime.now() - self.last_access) > ALLOWED_INACTIVITY_PERIOD:
+        if (datetime.now() - self.last_access) > self.inactivity_period:
             return True
         return False
 
@@ -76,6 +83,20 @@ class UserSession:
         """Close the Session."""
         self._email = None
         self._account_id = None
+
+    def configure_authenticated(self, remember_me: bool = False):
+        """Set authenticated mode and inactivity timeout policy."""
+        self.remember_me = remember_me
+        if remember_me:
+            self.inactivity_period = REMEMBER_ME_INACTIVITY_PERIOD
+        else:
+            self.inactivity_period = DEFAULT_INACTIVITY_PERIOD
+        self.access()
+
+    @property
+    def jwt_expiry_seconds(self) -> int:
+        """JWT lifetime in seconds for this session mode."""
+        return int(self.inactivity_period.total_seconds())
 
 
 SESSIONS: list[UserSession] = []
@@ -107,8 +128,12 @@ class SessionManager:
 
     def get_session(self, client_token: str) -> Union[UserSession, None]:
         """Get the Specific User Session Based on the Client Token."""
-        for session in self.user_sessions:
+        for idx, session in enumerate(self.user_sessions):
             if session == client_token:
+                if session.stale:
+                    del self.user_sessions[idx]
+                    return None
+                session.access()
                 return session
         # Nothing Found
         return None

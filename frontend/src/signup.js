@@ -1,6 +1,5 @@
 import * as React from 'react';
 import Avatar from '@mui/material/Avatar';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CssBaseline from '@mui/material/CssBaseline';
 import TextField from '@mui/material/TextField';
@@ -10,17 +9,16 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { ThemeProvider } from '@mui/material/styles';
+import toast from 'react-hot-toast';
 import { Copyright, client, theme } from './login';
 import { setToken } from './auth';
 
 export default function SignUpPortal() {
-    const [loginAlert, setLoginAlert] = React.useState("");
-
     const handleSubmit = (event) => {
         event.preventDefault();
         const data = new FormData(event.currentTarget);
         console.log(window.client_token)
-    
+
         client.post("create-initial-account", {
           name: data.get('name'),
           email: data.get('email'),
@@ -29,11 +27,10 @@ export default function SignUpPortal() {
         }).then((response) => {
           console.log(response);
           if (response.data.message !== null) {
-            setLoginAlert(response.data.message);
+            toast.error(response.data.message);
           } else if (response.data.token !== null) {
             setToken(response.data.token);
-            setLoginAlert("");
-    
+
             // Redirect to Admin
             window.location.href = "/";
           }
@@ -41,27 +38,27 @@ export default function SignUpPortal() {
         .catch((error) => {
           if (error.response.status === 410 ){
             if (String(error.response.data.detail).includes('please reload')) {
-              setLoginAlert("Please Reload Page.")
+              toast.error("Please Reload Page.")
             } else {
-              setLoginAlert("Server Failure, Please Try Again.")
+              toast.error("Server Failure, Please Try Again.")
             }
             if( error.response ){
               console.log(error.response.data); // => the response payload
             }
           } else if (error.response.status === 401) {
             if (String(error.response.data.detail.toLowerCase()).includes('email')) {
-              setLoginAlert(error.response.data.detail)
+              toast.error(error.response.data.detail)
             } else {
-              setLoginAlert("Server Failure, Please Try Again.")
+              toast.error("Server Failure, Please Try Again.")
             }
           } else if (error.response.status === 403) {
             if (String(error.response.data.detail.toLowerCase()).includes('email')) {
-              setLoginAlert(error.response.data.detail)
+              toast.error(error.response.data.detail)
             } else {
-              setLoginAlert("Server Failure, Please Try Again.")
+              toast.error("Server Failure, Please Try Again.")
             }
           } else {
-            setLoginAlert("Failed to communicate with authentication service.")
+            toast.error("Failed to communicate with authentication service.")
             if( error.response ){
               console.log(error.response.data); // => the response payload
             }
@@ -87,11 +84,6 @@ export default function SignUpPortal() {
           <Typography component="h1" variant="h5">
             Create Admin Account
           </Typography>
-          {loginAlert.length > 0 &&
-              <Alert severity="error">
-              <span style={{ whiteSpace: 'pre-line' }}>{loginAlert}</span>
-              </Alert>
-          }
           <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={12}>

@@ -5,9 +5,9 @@
  ******************************************************************************/
 
 import * as React from 'react';
+import toast from 'react-hot-toast';
 import {
   Avatar,
-  Alert,
   Button,
   CssBaseline,
   TextField,
@@ -55,7 +55,6 @@ export const theme = createTheme(getDesignTokens(getSavedThemeMode()));
 
 export default function LoginPortal() {
   refreshTokenCall({redirect: false});
-  const [loginAlert, setLoginAlert] = React.useState("");
   const [signupRequired, setSignupRequired] = React.useState(null);
 
   React.useEffect(()=>{
@@ -103,10 +102,9 @@ export default function LoginPortal() {
     }).then((response) => {
       console.log(response);
       if (response.data.message !== null) {
-        setLoginAlert(response.data.message);
+        toast.error(response.data.message);
       } else if (response.data.token !== null) {
         setToken(response.data.token);
-        setLoginAlert("");
 
         // Redirect to preserved secure destination when provided.
         window.location.href = getPostLoginRedirectTarget("/");
@@ -115,27 +113,27 @@ export default function LoginPortal() {
     .catch((error) => {
       if (error.response.status === 410 ){
         if (String(error.response.data.detail).includes('please reload')) {
-          setLoginAlert("Please Reload Page.")
+          toast.error("Please Reload Page.")
         } else {
-          setLoginAlert("Server Failure, Please Try Again.")
+          toast.error("Server Failure, Please Try Again.")
         }
         if( error.response ){
           console.log(error.response.data); // => the response payload
         }
       } else if (error.response.status === 401) {
         if (String(error.response.data.detail.toLowerCase()).includes('email')) {
-          setLoginAlert(error.response.data.detail)
+          toast.error(error.response.data.detail)
         } else {
-          setLoginAlert("Server Failure, Please Try Again.")
+          toast.error("Server Failure, Please Try Again.")
         }
       } else if (error.response.status === 403) {
         if (String(error.response.data.detail.toLowerCase()).includes('email')) {
-          setLoginAlert(error.response.data.detail)
+          toast.error(error.response.data.detail)
         } else {
-          setLoginAlert("Server Failure, Please Try Again.")
+          toast.error("Server Failure, Please Try Again.")
         }
       } else {
-        setLoginAlert("Failed to communicate with authentication service.")
+        toast.error("Failed to communicate with authentication service.")
         if( error.response ){
           console.log(error.response.data); // => the response payload
         }
@@ -197,11 +195,6 @@ export default function LoginPortal() {
             <Typography component="h1" variant="h6">
               Connecting audiences to the creators they love.
             </Typography>
-            {loginAlert.length > 0 &&
-              <Alert severity="error">
-                <span style={{ whiteSpace: 'pre-line' }}>{loginAlert}</span>
-              </Alert>
-            }
             <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
               <TextField
                 margin="normal"

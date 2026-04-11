@@ -11,13 +11,19 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Tooltip from '@mui/material/Tooltip';
 import PersonIcon from '@mui/icons-material/Person';
 import AllInboxIcon from '@mui/icons-material/AllInbox';
-import { FixedSizeList } from 'react-window';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { getGroupsListByAccount } from '../../api/groups';
 
 
 export default function AdminAppDrawer(props) {
+  const theme = useTheme();
+  const isCompact = useMediaQuery(theme.breakpoints.down('md'));
+  const compactDrawerWidth = 72;
+  const activeDrawerWidth = isCompact ? compactDrawerWidth : props.drawerWidth;
   const [groups, setGroups] = React.useState([]);
 
   React.useEffect(()=>{
@@ -27,74 +33,102 @@ export default function AdminAppDrawer(props) {
     }
   },[props.account]);
 
-
-  const renderRow = (rowProps) => {
-    return (
-      <ListItem key={rowProps.data[rowProps.index].id} disablePadding>
-        <ListItemButton onClick={() => {
-          props.onNavigate({
-            page: "Submissions",
-            submissionGroup: rowProps.data[rowProps.index].id
-          })
-        }}>
-          <ListItemText primary={rowProps.data[rowProps.index].name} />
-        </ListItemButton>
-      </ListItem>
-    );
-  }
-  
-
   return (
     <>
       <Drawer
         sx={{
-          width: props.drawerWidth,
+          width: activeDrawerWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': {
-            width: props.drawerWidth,
+            width: activeDrawerWidth,
             boxSizing: 'border-box',
+            overflowX: 'hidden',
+            overflowY: 'hidden',
           },
         }}
         variant="permanent"
+        open
         anchor="left"
       >
         <Toolbar />
         <Divider />
         <List>
           <ListItem key={"accounts"} disablePadding>
-            <ListItemButton onClick={() => {props.onNavigate({page: "Accounts"})}}>
-              <ListItemIcon><PersonIcon /></ListItemIcon>
-              <ListItemText primary={"Accounts"} />
-            </ListItemButton>
+            <Tooltip title={isCompact ? 'Accounts' : ''} placement="right">
+              <ListItemButton
+                onClick={() => {props.onNavigate({page: "Accounts"})}}
+                sx={{ justifyContent: isCompact ? 'center' : 'flex-start', px: 1.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 0, mr: isCompact ? 0 : 1.5, justifyContent: 'center' }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                {!isCompact && <ListItemText primary={"Accounts"} />}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
           <ListItem key={"groups"} disablePadding>
-            <ListItemButton onClick={() => {props.onNavigate({page: "Groups"})}}>
-              <ListItemIcon><AllInboxIcon /></ListItemIcon>
-              <ListItemText primary={"Groups"} />
-            </ListItemButton>
+            <Tooltip title={isCompact ? 'Groups' : ''} placement="right">
+              <ListItemButton
+                onClick={() => {props.onNavigate({page: "Groups"})}}
+                sx={{ justifyContent: isCompact ? 'center' : 'flex-start', px: 1.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 0, mr: isCompact ? 0 : 1.5, justifyContent: 'center' }}>
+                  <AllInboxIcon />
+                </ListItemIcon>
+                {!isCompact && <ListItemText primary={"Groups"} />}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         </List>
         <Divider />
         <Box
-          sx={{ width: '100%', height: 400, maxWidth: props.drawerWidth-2, bgcolor: 'background.paper' }}
+          sx={{
+            width: '100%',
+            height: 'calc(100vh - 180px)',
+            bgcolor: 'background.paper',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            '&::-webkit-scrollbar': { display: 'none' },
+          }}
         >
-          <ListItem><ListItemText primary={"Submissions"}/></ListItem>
-          <FixedSizeList
-            height={400}
-            width={props.drawerWidth-2}
-            itemSize={46}
-            itemData={groups}
-            itemCount={groups.length}
-            overscanCount={5}
-          >
-            {renderRow}
-          </FixedSizeList>
+          {!isCompact && <ListItem><ListItemText primary={"Submissions"}/></ListItem>}
+          <List disablePadding>
+            {groups.map((group) => (
+              <ListItem key={group.id} disablePadding>
+                <Tooltip title={isCompact ? group.name : ''} placement="right">
+                  <ListItemButton
+                    onClick={() => {
+                      props.onNavigate({
+                        page: "Submissions",
+                        submissionGroup: group.id
+                      });
+                    }}
+                    sx={{ justifyContent: isCompact ? 'center' : 'flex-start', px: 1.5 }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 0, mr: isCompact ? 0 : 1.5, justifyContent: 'center' }}>
+                      <AllInboxIcon fontSize="small" />
+                    </ListItemIcon>
+                    {!isCompact && <ListItemText primary={group.name} />}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            ))}
+          </List>
         </Box>
         <Divider />
       </Drawer>
       <Box
         component="main"
-        sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
+        sx={{
+          flexGrow: 1,
+          bgcolor: 'background.default',
+          p: 3,
+          width: `calc(100% - ${activeDrawerWidth}px)`,
+          minWidth: 0,
+          overflowX: 'hidden',
+        }}
       >
         <Toolbar />
         {props.children}

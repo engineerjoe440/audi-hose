@@ -2,6 +2,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {RouterProvider, createBrowserRouter} from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import './index.css';
 import EmbedableRecorder from './Component';
 import { RequireToken } from './auth';
@@ -41,8 +42,8 @@ if (!!rootElement) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <React.StrictMode>
+      <Toaster position="bottom-right" reverseOrder={false} />
       <RouterProvider router={router} />
     </React.StrictMode>
   );
 }
-

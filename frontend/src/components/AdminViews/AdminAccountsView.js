@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Box, Typography, Fab, Grid } from '@mui/material';
+import { Box, Typography, Fab } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { CollapsibleTable } from '../CollapsibleTable';
 import { NewAccountDialog } from './AdminDialog';
@@ -31,23 +31,16 @@ export function AdminAccountsView(props) {
       }
     });
   }
-  
+
   return (
     <>
       <NewAccountDialog open={newAccountOpen} onClose={() => {setNewAccountOpen(false)}}/>
-      <Grid container>
-        <Grid item xs={10}>
-          <Typography variant='h3'>Accounts</Typography>
-        </Grid>
-        <Grid item xs={2}>
-          <Box sx={{ '& > :not(style)': { m: 1 } }}>
-            <Fab color="primary" aria-label="add" onClick={() => {setNewAccountOpen(true)}}>
-              <AddIcon />
-            </Fab>
-          </Box>
-        </Grid>
-      </Grid>
-      <br/>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant='h3'>Accounts</Typography>
+        <Fab color="primary" aria-label="add" onClick={() => {setNewAccountOpen(true)}}>
+          <AddIcon />
+        </Fab>
+      </Box>
       <CollapsibleTable childRows={accounts} />
     </>
   );

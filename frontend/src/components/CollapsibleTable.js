@@ -2,21 +2,21 @@ import * as React from 'react';
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
-import Collapse from '@mui/material/Collapse';
-import IconButton from '@mui/material/IconButton';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
 import Fab from '@mui/material/Fab';
+import IconButton from '@mui/material/IconButton';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import AddIcon from '@mui/icons-material/Add';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import CloseIcon from '@mui/icons-material/Close';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import toast from 'react-hot-toast';
@@ -26,7 +26,7 @@ import { api_client, fetchToken } from '../auth';
 
 export function CollapsibleTableRow(props) {
   const { row } = props;
-  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const [groupsDrawerOpen, setGroupsDrawerOpen] = React.useState(false);
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const doRemoveAccount = () => {
@@ -40,27 +40,25 @@ export function CollapsibleTableRow(props) {
         },
       }
     ).then(res => res.data).then(jsonData => {
-      // Account Has Been Removed
       toast.custom(
         <Paper elevation={6}>
           <Typography variant="h5">
             Account Successfully Removed
           </Typography>
           <Button
+            color="inherit"
             endIcon={<RefreshIcon />}
             onClick={() => {window.location.reload()}}
           >
             Refresh
           </Button>
         </Paper>,
-        {
-          duration: 8000,
-        }
+        { duration: 8000 }
       );
     })
     .catch((error) => {
       if( error.response ){
-        console.log(error.response.data); // => the response payload
+        console.log(error.response.data);
       }
     });
   }
@@ -78,27 +76,25 @@ export function CollapsibleTableRow(props) {
         },
       }
     ).then(res => res.data).then(jsonData => {
-      // Account Has Been Removed
       toast.custom(
         <Paper elevation={6}>
           <Typography variant="h5">
-            Account Successfully Removed
+            Group Successfully Removed
           </Typography>
           <Button
+            color="inherit"
             endIcon={<RefreshIcon />}
             onClick={() => {window.location.reload()}}
           >
             Refresh
           </Button>
         </Paper>,
-        {
-          duration: 8000,
-        }
+        { duration: 8000 }
       );
     })
     .catch((error) => {
       if( error.response ){
-        console.log(error.response.data); // => the response payload
+        console.log(error.response.data);
       }
     });
   }
@@ -110,75 +106,86 @@ export function CollapsibleTableRow(props) {
         account={row}
         onClose={() => {setDialogOpen(false)}}
       />
+
+      {/* Right-side groups drawer */}
+      <Drawer
+        anchor="right"
+        open={groupsDrawerOpen}
+        onClose={() => setGroupsDrawerOpen(false)}
+      >
+        <Box sx={{ width: 320 }} role="presentation">
+          <Toolbar sx={{ justifyContent: 'space-between' }}>
+            <Typography variant="h6" noWrap>
+              Groups — {row.name}
+            </Typography>
+            <IconButton
+              aria-label="close"
+              onClick={() => setGroupsDrawerOpen(false)}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Toolbar>
+          <Divider />
+          <Box sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="subtitle1">Assigned Groups</Typography>
+              <Fab
+                size="small"
+                color="primary"
+                aria-label="add group"
+                onClick={() => setDialogOpen(true)}
+              >
+                <AddIcon />
+              </Fab>
+            </Box>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {!!row.associations && row.associations.map((associationRow) => (
+                  <TableRow key={associationRow.id}>
+                    <TableCell component="th" scope="row">
+                      {associationRow.name}
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton
+                        size="small"
+                        onClick={() => doRemoveGroup(associationRow.id)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        </Box>
+      </Drawer>
+
       <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
-        <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setDrawerOpen(!drawerOpen)}
-          >
-            {drawerOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell>
         <TableCell component="th" scope="row">
           {row.name}
         </TableCell>
-        <TableCell component="th" scope="row">
+        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
           {row.email}
         </TableCell>
         <TableCell align="right">
+          <Button
+            size="small"
+            variant="contained"
+            sx={{ mr: 1 }}
+            onClick={() => setGroupsDrawerOpen(true)}
+          >
+            Edit Groups
+          </Button>
           <IconButton onClick={doRemoveAccount}>
-            <DeleteIcon/>
+            <DeleteIcon />
           </IconButton>
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-          <Collapse in={drawerOpen} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
-              <Grid container>
-                <Grid item xs={10}>
-                  <Typography variant="h6" gutterBottom component="div">
-                    Groups
-                  </Typography>
-                </Grid>
-                <Grid item xs={2}>
-                  <Box sx={{ '& > :not(style)': { m: 1 } }}>
-                    <Fab
-                      size="small"
-                      color="primary"
-                      aria-label="add"
-                      onClick={() => {setDialogOpen(true)}}
-                    >
-                      <AddIcon />
-                    </Fab>
-                  </Box>
-                </Grid>
-              </Grid>
-              <Table size="small" aria-label="purchases">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {!!row.associations && row.associations.map((associationRow) => (
-                    <TableRow key={associationRow.id}>
-                      <TableCell component="th" scope="row">
-                        {associationRow.name}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton onClick={() => {doRemoveGroup(associationRow.id)}}>
-                          <DeleteIcon/>
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          </Collapse>
         </TableCell>
       </TableRow>
     </React.Fragment>
@@ -207,9 +214,8 @@ export function CollapsibleTable({
         <Table aria-label="collapsible table" size="small">
           <TableHead>
             <TableRow>
-              <TableCell />
               <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Email</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>

@@ -66,6 +66,7 @@ const headCells = [
     numeric: false,
     disablePadding: true,
     label: 'Email',
+    hideOnMobile: true,
   },
   {
     id: 'time',
@@ -98,6 +99,7 @@ function EnhancedTableHead(props) {
         </TableCell>
         {headCells.map((headCell) => (
           <TableCell
+            sx={headCell.hideOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : {}}
             key={headCell.id}
             align={headCell.numeric ? 'right' : 'left'}
             padding={headCell.disablePadding ? 'none' : 'normal'}
@@ -215,7 +217,7 @@ export function AdminSubmissionGroup(props) {
         }
       });
     }
-  
+
     const getRecordingRows = () => {
       api_client.get(`recordings/group/${props.group}`, {
         withCredentials: true,
@@ -306,7 +308,6 @@ export function AdminSubmissionGroup(props) {
         />
         <TableContainer>
           <Table
-            sx={{ minWidth: 750 }}
             aria-labelledby="tableTitle"
             size='medium'
           >
@@ -351,7 +352,7 @@ export function AdminSubmissionGroup(props) {
                     >
                       {row.subject}
                     </TableCell>
-                    <TableCell>{row.email}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.email}</TableCell>
                     <TableCell>{row.time}</TableCell>
                   </TableRow>
                 );

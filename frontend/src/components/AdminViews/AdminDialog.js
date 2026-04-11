@@ -12,16 +12,21 @@ import Paper from '@mui/material/Paper';
 import MenuItem from '@mui/material/MenuItem';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import toast from 'react-hot-toast';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { api_client, fetchToken } from '../../auth';
 import { getGroupsList } from '../../api/groups';
 
 export function NewAccountDialog(props) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <React.Fragment>
       <Dialog
         open={props.open}
         onClose={props.onClose}
+        fullScreen={fullScreen}
         PaperProps={{
           component: 'form',
           onSubmit: (event) => {
@@ -47,6 +52,7 @@ export function NewAccountDialog(props) {
                     New Account Created Successfully
                   </Typography>
                   <Button
+                    color="inherit"
                     endIcon={<RefreshIcon />}
                     onClick={() => {window.location.reload()}}
                   >
@@ -106,8 +112,8 @@ export function NewAccountDialog(props) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={props.onClose}>Cancel</Button>
-          <Button type="submit">Create Account</Button>
+          <Button color="inherit" onClick={props.onClose}>Cancel</Button>
+          <Button variant="contained" type="submit">Create Account</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>
@@ -116,12 +122,15 @@ export function NewAccountDialog(props) {
 
 
 export function NewGroupDialog(props) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <React.Fragment>
       <Dialog
         open={props.open}
         onClose={props.onClose}
+        fullScreen={fullScreen}
         PaperProps={{
           component: 'form',
           onSubmit: (event) => {
@@ -146,6 +155,7 @@ export function NewGroupDialog(props) {
                     New Group Created Successfully
                   </Typography>
                   <Button
+                    color="inherit"
                     endIcon={<RefreshIcon />}
                     onClick={() => {window.location.reload()}}
                   >
@@ -183,8 +193,8 @@ export function NewGroupDialog(props) {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={props.onClose}>Cancel</Button>
-          <Button type="submit">Create Group</Button>
+          <Button color="inherit" onClick={props.onClose}>Cancel</Button>
+          <Button variant="contained" type="submit">Create Group</Button>
         </DialogActions>
       </Dialog>
     </React.Fragment>
@@ -194,18 +204,21 @@ export function NewGroupDialog(props) {
 
 
 export function SelectGroupDialog(props) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [groups, setGroups] = React.useState([]);
 
   React.useEffect(()=>{
     // Load Requisites when page Completes
     getGroupsList({onSet: setGroups});
   },[]);
-  
+
     return (
       <React.Fragment>
         <Dialog
           open={props.open}
           onClose={props.onClose}
+          fullScreen={fullScreen}
           PaperProps={{
             component: 'form',
             onSubmit: (event) => {
@@ -228,6 +241,7 @@ export function SelectGroupDialog(props) {
                       Group Successfully Added
                     </Typography>
                     <Button
+                      color="inherit"
                       endIcon={<RefreshIcon />}
                       onClick={() => {window.location.reload()}}
                     >
@@ -266,8 +280,8 @@ export function SelectGroupDialog(props) {
             </Select>
           </DialogContent>
           <DialogActions>
-            <Button onClick={props.onClose}>Cancel</Button>
-            <Button type="submit">Add Group</Button>
+            <Button color="inherit" onClick={props.onClose}>Cancel</Button>
+            <Button variant="contained" type="submit">Add Group</Button>
           </DialogActions>
         </Dialog>
       </React.Fragment>

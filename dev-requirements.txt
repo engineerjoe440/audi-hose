@@ -2,3 +2,8 @@ pylint
 pydocstyle
 ruff
 pytest
+pytest-cov
+pytest-mock
+httpx
+anyio
+pytest-asyncio

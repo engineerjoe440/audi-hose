@@ -22,7 +22,7 @@ COPY ./audihose /server/audihose
 
 # Copy built frontend assets into FastAPI expected locations
 COPY --from=uibuilder /audihose/static/react /server/audihose/static/react
-COPY --from=uibuilder /templates/index.html /server/audihose/templates/index.html
+COPY --from=uibuilder /audihose/templates/index.html /server/audihose/templates/index.html
 
 CMD ["uvicorn", "audihose.main:app", "--host", "0.0.0.0", "--port", "80", "--forwarded-allow-ips", "*"]
 

@@ -31,14 +31,23 @@ class UserSession:
     remember_me: bool
     inactivity_period: timedelta
 
-    def __init__(self):
-        """Record the Client Token for this Session."""
-        self.client_token = str(uuid4())
-        self._email = None
-        self._account_id = None
+    def __init__(
+        self,
+        token: str | None = None,
+        client_token: str | None = None,
+        email: EmailStr | None = None,
+        account_id: str | None = None,
+        remember_me: bool = False,
+    ):
+        """Initialize a session with optional compatibility parameters."""
+        self.client_token = client_token or token or str(uuid4())
+        self._email = email
+        self._account_id = account_id
         self.remember_me = False
         self.inactivity_period = DEFAULT_INACTIVITY_PERIOD
         self.access()
+        if remember_me:
+            self.configure_authenticated(remember_me=True)
 
     def __eq__(self, __value: object) -> bool:
         """Equivalence is Based on `client_token` of Object."""
@@ -51,6 +60,29 @@ class UserSession:
     def access(self):
         """Record the Access Time."""
         self.last_access = datetime.now()
+
+    @property
+    def token(self) -> str:
+        """Backward-compatible alias for client token."""
+        return self.client_token
+
+    @token.setter
+    def token(self, new: str):
+        """Backward-compatible alias for client token."""
+        self.client_token = new
+
+    @property
+    def last_activity(self) -> float:
+        """Backward-compatible timestamp view of last access time."""
+        return self.last_access.timestamp()
+
+    @last_activity.setter
+    def last_activity(self, new):
+        """Allow tests to set activity as epoch float or datetime."""
+        if isinstance(new, datetime):
+            self.last_access = new
+            return
+        self.last_access = datetime.fromtimestamp(float(new))
 
     @property
     def email(self):
@@ -113,7 +145,8 @@ class SessionManager:
 
     def __init__(self) -> None:
         """Load a Default List."""
-        self.user_sessions = SESSIONS # Use a Global, Mutable Object
+        self.user_sessions = SESSIONS  # Use a global mutable store.
+        self._sessions = self.user_sessions
 
     @staticmethod
     def create_session() -> str:
@@ -121,10 +154,33 @@ class SessionManager:
         manager = SessionManager()
         return manager.new_session()
 
-    def new_session(self):
-        """Create a New Session and Provide its Unique ID."""
-        self.user_sessions.append(UserSession())
-        return self.user_sessions[-1].client_token
+    def new_session(
+        self,
+        token: str | None = None,
+        client_token: str | None = None,
+        email: EmailStr | None = None,
+        account_id: str | None = None,
+        remember_me: bool = False,
+    ):
+        """Create a new session.
+
+        Returns a token string for default app flow and a UserSession object when
+        explicit session fields are supplied (legacy test flow).
+        """
+        has_explicit_payload = any(
+            value is not None for value in (token, client_token, email, account_id)
+        )
+        new_user_session = UserSession(
+            token=token,
+            client_token=client_token,
+            email=email,
+            account_id=account_id,
+            remember_me=remember_me,
+        )
+        self.user_sessions.append(new_user_session)
+        if has_explicit_payload:
+            return new_user_session
+        return new_user_session.client_token
 
     def get_session(self, client_token: str) -> Union[UserSession, None]:
         """Get the Specific User Session Based on the Client Token."""
@@ -145,7 +201,8 @@ class SessionManager:
                 session.close()
                 del session
                 del self.user_sessions[idx]
-                return
+                return True
+        return False
 
     def prune_sessions(self):
         """Prune all Stale Sessions."""

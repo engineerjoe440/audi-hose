@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session as SQLModelSession
 
 from audihose.main import app
@@ -42,7 +43,11 @@ def temp_config(temp_dir):
 def test_db_session():
     """Create an in-memory SQLite database session for testing."""
     # Use sqlite:///:memory: for in-memory SQLite
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 
     # Create all tables
     SQLModel.metadata.create_all(engine)
@@ -200,7 +205,7 @@ def client(test_db_session):
 
     # Override get_session dependency
     def override_get_session():
-        return test_db_session
+        yield test_db_session
 
     app.dependency_overrides[get_session] = override_get_session
 

@@ -11,7 +11,7 @@ Author: Joe Stanley
 from typing import Annotated, Union
 
 from fastapi import (
-    Request, APIRouter, HTTPException, status, Query, Cookie, Depends, Response
+    Request, APIRouter, HTTPException, status, Query, Cookie, Depends, Response, Header
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
@@ -22,6 +22,7 @@ from sqlmodel import select
 from .sessions import (
     get_session,
     close_session,
+    SessionManager,
     REMEMBER_ME_INACTIVITY_SECONDS,
 )
 from .database import Account, Login, NewAccountData, SessionDependency
@@ -30,13 +31,14 @@ from .api.accounts import create_account
 
 
 router = APIRouter()
+REVOKED_TOKENS: set[str] = set()
 
 
 class LoginItem(BaseModel):
     """Login Parameters."""
     email: str
     password: str
-    client_token: str
+    client_token: str | None = None
     remember_me: bool = False
 
 class TokenResponse(BaseModel):
@@ -123,7 +125,8 @@ def user_login(
     session: SessionDependency,
 ) -> TokenResponse:
     """Authenticate admin user and provide a JSON Web Token."""
-    user_session = get_session(client_token=login_item.client_token)
+    client_token = login_item.client_token or SessionManager.create_session()
+    user_session = get_session(client_token=client_token)
     if not user_session:
         raise HTTPException(
             status_code=status.HTTP_410_GONE,
@@ -143,7 +146,9 @@ def user_login(
             select(Account).where(Account.email == email)
         ).first()
         if account and account.id is not None:
-            login_db_entry = session.get(Login, account.id)
+            login_db_entry = session.exec(
+                select(Login).where(Login.account_id == account.id)
+            ).first()
             if login_db_entry and check_password(
                 password,
                 login_db_entry.hashed_password,
@@ -234,3 +239,76 @@ def create_initial_account(
         status_code=status.HTTP_423_LOCKED,
         detail="Cannot create a new account."
     )
+
+
+def require_bearer_token_only(authorization: str | None = Header(default=None)):
+    """Compatibility auth check that validates JWT signature only."""
+    if not authorization:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+    token = authorization.split(" ", 1)[1].strip()
+    if not token or not verify_token(token=token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if token in REVOKED_TOKENS:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return token
+
+
+@router.post("/api/v1/auth/login")
+def user_login_compat(
+    login_item: LoginItem,
+    response: Response,
+    session: SessionDependency,
+):
+    """Compatibility login endpoint."""
+    result = user_login(login_item=login_item, response=response, session=session)
+    if result.token:
+        return {"access_token": result.token, "token_type": "bearer"}
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=result.message)
+
+
+@router.post("/api/v1/auth/refresh", dependencies=[Depends(require_bearer_token_only)])
+@router.post("/api/v1/auth/refresh-token", dependencies=[Depends(require_bearer_token_only)])
+def refresh_token_compat(
+    response: Response,
+    client_token: Annotated[str | None, Cookie()] = None,
+):
+    """Compatibility refresh endpoint."""
+    result = refresh_token(response=response, client_token=client_token)
+    return {"access_token": result.token, "token_type": "bearer"}
+
+
+@router.post("/api/v1/auth/logout", dependencies=[Depends(require_bearer_token_only)])
+def logout_compat(
+    client_token: Annotated[str | None, Cookie()] = None,
+    authorization: str | None = Header(default=None),
+):
+    """Compatibility logout endpoint."""
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        if token:
+            REVOKED_TOKENS.add(token)
+    logout(client_token=client_token)
+    return {"status": "ok"}
+
+
+@router.get("/api/v1/auth/signup-status")
+def determine_signup_status_compat(session: SessionDependency):
+    """Compatibility signup status endpoint."""
+    return {"signup_enabled": determine_signup_status(session=session)}
+
+
+@router.post("/api/v1/auth/sign-up")
+def create_initial_account_compat(
+    initial_account_data: NewAccountData,
+    session: SessionDependency,
+    client_token: Annotated[str | None, Cookie()] = None,
+):
+    """Compatibility initial-account endpoint."""
+    result = create_initial_account(
+        initial_account_data=initial_account_data,
+        session=session,
+        client_token=client_token,
+    )
+    return {"access_token": result.token, "token_type": "bearer"}

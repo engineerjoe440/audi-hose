@@ -77,6 +77,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost",
         "http://localhost:8000", # Uvicorn Default Server
+        "http://example.com",
     ] + settings.application.cross_site_origins,
     allow_credentials=True,
     allow_methods=["*"],

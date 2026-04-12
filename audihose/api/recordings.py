@@ -11,7 +11,7 @@ Author: Joe Stanley
 from typing import Annotated, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, File, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import EmailStr
 from sqlalchemy.orm import selectinload
@@ -26,11 +26,12 @@ from ..database import (
 )
 from ..configuration import settings
 from ..notifier import send_email_message
+from .common import get_group_or_404, require_api_auth
 
 
 router = APIRouter(prefix="/recordings")
 
-@router.get("/")
+@router.get("/", dependencies=[Depends(require_api_auth)])
 def get_all_recordings(session: SessionDependency) -> list[RecordingRead]:
     """Get the List of all Recordings."""
     recordings = session.exec(
@@ -39,17 +40,17 @@ def get_all_recordings(session: SessionDependency) -> list[RecordingRead]:
     ).all()
     return [to_recording_read(recording) for recording in recordings]
 
-@router.get("/group/{group_id}")
+@router.get("/group/{group_id}", dependencies=[Depends(require_api_auth)])
 def get_recordings_by_group(
     group_id: str,
     session: SessionDependency,
 ) -> list[RecordingRead]:
     """Get the Recordings by Group ID."""
-    group = session.get(PublicationGroup, group_id)
-    if group is None:
+    group = get_group_or_404(session=session, group_id=group_id)
+    if not group.accepting_submissions:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Group not found.",
+            status_code=status.HTTP_423_LOCKED,
+            detail="Group is not accepting submissions.",
         )
     recordings = session.exec(
         select(Recording)
@@ -59,7 +60,7 @@ def get_recordings_by_group(
     ).all()
     return [to_recording_read(recording) for recording in recordings]
 
-@router.get("/{recording_id}")
+@router.get("/{recording_id}", dependencies=[Depends(require_api_auth)])
 def get_single_recording(
     recording_id: str,
     session: SessionDependency,
@@ -78,7 +79,7 @@ def get_single_recording(
 
     return StreamingResponse(inner_iter(), media_type="audio/mp3")
 
-@router.put("/")
+@router.put("/", dependencies=[Depends(require_api_auth)])
 def create_new_recording(
     subject: str,
     group_id: str,
@@ -93,11 +94,11 @@ def create_new_recording(
     with open(file_path, 'wb') as dst_file_obj:
         dst_file_obj.write(recording)
     # Look Up the Group
-    group = session.get(PublicationGroup, group_id)
-    if group is None:
+    group = get_group_or_404(session=session, group_id=group_id)
+    if not group.accepting_submissions:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Group not found.",
+            status_code=status.HTTP_423_LOCKED,
+            detail="Group is not accepting submissions.",
         )
     # Record the New Audio Recording in the Database
     db_recording = Recording(
@@ -111,7 +112,8 @@ def create_new_recording(
     session.commit()
     return recording_id
 
-@router.post("/notify/{recording_id}")
+@router.post("/notify/{recording_id}", dependencies=[Depends(require_api_auth)])
+@router.post("/{recording_id}/notify", dependencies=[Depends(require_api_auth)])
 def send_new_data_notification(
     recording_id: str,
     session: SessionDependency,
@@ -141,3 +143,29 @@ def send_new_data_notification(
             to_address=account.email,
             #kwargs
         )
+    return {"status": "ok"}
+
+
+@router.post("/", dependencies=[Depends(require_api_auth)])
+def create_new_recording_post(
+    session: SessionDependency,
+    file: Annotated[bytes, File()],
+    subject: str = Form(...),
+    group_id: str = Form(...),
+    email: Optional[EmailStr] = Form(default=None),
+) -> RecordingRead:
+    """Compatibility endpoint for POST + file upload with `file` field name."""
+    recording_id = create_new_recording(
+        subject=subject,
+        group_id=group_id,
+        session=session,
+        recording=file,
+        email=email,
+    )
+    created = session.get(Recording, recording_id)
+    if created is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Recording creation failed.",
+        )
+    return to_recording_read(created)

@@ -15,6 +15,7 @@ from datetime import datetime
 
 from fastapi import Depends
 from pydantic import BaseModel, EmailStr
+from sqlalchemy import Column, DateTime
 from sqlmodel import (
     Field, Relationship, SQLModel, Session, create_engine, select
 )
@@ -97,9 +98,10 @@ class PublicationGroupAccountLink(SQLModel, table=True):
     """Link Table for Account Membership in Publication Groups."""
     __tablename__ = "publication_group_account_link"
 
-    publication_group_id: str = Field(
+    group_id: str = Field(
         foreign_key="publication_group.id",
         primary_key=True,
+        alias="publication_group_id",
     )
     account_id: str = Field(foreign_key="account.id", primary_key=True)
 
@@ -111,6 +113,7 @@ class Account(SQLModel, table=True):
     id: str = Field(default_factory=generate_identifier, primary_key=True)
     name: str
     email: EmailStr = Field(index=True, unique=True)
+    login: Optional["Login"] = Relationship(back_populates="account")
     groups: List["PublicationGroup"] = Relationship(
         back_populates="accounts",
         link_model=PublicationGroupAccountLink,
@@ -121,8 +124,10 @@ class Login(SQLModel, table=True):
     """Login Information for a Singular Account."""
     __tablename__ = "login"
 
-    id: str = Field(foreign_key="account.id", primary_key=True)
+    id: str = Field(default_factory=generate_identifier, primary_key=True)
+    account_id: str = Field(foreign_key="account.id", index=True)
     hashed_password: str
+    account: Optional["Account"] = Relationship(back_populates="login")
 
 
 class PublicationGroup(SQLModel, table=True):
@@ -144,13 +149,18 @@ class AccountWithGroups(AccountData):
     id: str
     associations: List[PublicationGroupSummary]
 
+    @property
+    def groups(self) -> List[PublicationGroupSummary]:
+        """Backward-compatible alias for associations."""
+        return self.associations
+
 
 class Recording(SQLModel, table=True):
     """Single Recording Reference."""
     __tablename__ = "recording"
 
     id: str = Field(default_factory=generate_identifier, primary_key=True)
-    time: datetime = Field(default_factory=datetime.now)
+    time: datetime = Field(sa_column=Column(DateTime, default=datetime.utcnow))
     subject: str
     email: Optional[EmailStr] = None
     file_path: str
@@ -218,16 +228,20 @@ def get_session():
 SessionDependency = Annotated[Session, Depends(get_session)]
 
 
-def ensure_default_publication_group() -> str:
-    """Create the Default Group Once and Return its Identifier."""
-    default_group = session.exec(
+def ensure_default_publication_group(db_session: Optional[Session] = None) -> str:
+    """Create the default group once and return its identifier.
+
+    Accepts an optional explicit session for test compatibility.
+    """
+    active_session = db_session or session
+    default_group = active_session.exec(
         select(PublicationGroup).where(PublicationGroup.name == DEFAULT_GROUP_NAME)
     ).first()
     if default_group is None:
         default_group = PublicationGroup(name=DEFAULT_GROUP_NAME)
-        session.add(default_group)
-        session.commit()
-        session.refresh(default_group)
+        active_session.add(default_group)
+        active_session.commit()
+        active_session.refresh(default_group)
     return default_group.id
 
 

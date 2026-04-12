@@ -10,6 +10,7 @@ Author: Joe Stanley
 
 import time
 import secrets
+from datetime import timedelta
 
 import bcrypt
 import jwt
@@ -36,8 +37,11 @@ def check_password(plain_text_password: str, hashed_password: str) -> bool:
 def sign_jwt(
     payload: dict,
     expiry_seconds: int = JWT_EXPIRY_LENGTH,
+    expires_delta: timedelta | None = None,
 ) -> dict[str, str]:
     """Generate a JSON Web Token (assuming valid authentication)."""
+    if expires_delta is not None:
+        expiry_seconds = int(expires_delta.total_seconds())
     payload["expires"] = time.time() + expiry_seconds
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token

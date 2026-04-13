@@ -10,6 +10,16 @@ from unittest.mock import patch
 from audihose.configuration import ConfigurationSettings
 
 
+DEFAULT_TEST_CONFIG = {
+    "application": {
+        "site_url": "",
+        "cross_site_origins": [],
+        "storage_path": "",
+    },
+    "notifications": [],
+}
+
+
 class TestConfigurationSettings:
     """Test ConfigurationSettings configuration loading and resolution."""
 
@@ -69,50 +79,17 @@ class TestConfigurationSettings:
             pytest.fail(f"Unexpected exception: {e}")
 
     def test_config_toml_parsing(self, temp_dir):
-        """Test TOML configuration file parsing."""
-        # Create a test TOML config file
+        """Test basic TOML configuration file parsing."""
         config_file = Path(temp_dir) / "app.toml"
         config_content = """
-[smtp]
-host = "smtp.example.com"
-port = 587
-from_address = "noreply@example.com"
-
-[ntfy]
-url = "https://ntfy.sh"
-topic = "audihose-notifications"
-
-[recordings]
-path = "./recordings"
+[application]
+site_url = "https://example.com"
+cross_site_origins = []
+storage_path = ""
 """
         config_file.write_text(config_content)
-
-        # ConfigurationSettings should be able to parse this
-        # (actual behavior depends on implementation)
         assert config_file.exists()
         assert config_file.read_text() is not None
-
-    def test_config_smtp_settings_available(self):
-        """Test that SMTP settings are available from configuration."""
-        try:
-            config = ConfigurationSettings()
-            # Should have SMTP configuration or defaults
-            # Exact attributes depend on implementation
-            assert config is not None
-        except Exception:
-            # Config file might not exist in test environment
-            pass
-
-    def test_config_ntfy_settings_available(self):
-        """Test that ntfy settings are available from configuration."""
-        try:
-            config = ConfigurationSettings()
-            # Should have ntfy configuration or defaults
-            # Exact attributes depend on implementation
-            assert config is not None
-        except Exception:
-            # Config file might not exist in test environment
-            pass
 
     def test_config_path_resolution(self, temp_dir):
         """Test path resolution with multiple fallbacks."""
@@ -130,10 +107,103 @@ path = "./recordings"
         try:
             config1 = ConfigurationSettings()
             config2 = ConfigurationSettings()
-
-            # Both should be valid instances
             assert config1 is not None
             assert config2 is not None
         except Exception:
-            # Config file might not exist
             pass
+
+
+class TestNotificationsConfiguration:
+    """Test that the [[notifications]] array-of-tables config is parsed correctly."""
+
+    def test_notifications_default_is_empty_list(self, temp_dir):
+        """When no [[notifications]] entries are present, the list is empty."""
+        config_file = Path(temp_dir) / "app.toml"
+        config_file.write_text("[application]\nsite_url = \"\"\n")
+
+        config = ConfigurationSettings()
+        config.init_config(
+            config_path=Path(temp_dir),
+            defaults=DEFAULT_TEST_CONFIG,
+            config_file_name="app",
+        )
+        notifications = getattr(config, "notifications", []) or []
+        assert isinstance(notifications, list)
+        assert len(notifications) == 0
+
+    def test_notifications_single_entry_parsed(self, temp_dir):
+        """A single [[notifications]] entry is loaded as a list with one item."""
+        config_file = Path(temp_dir) / "app.toml"
+        config_file.write_text(
+            '[application]\nsite_url = ""\n\n'
+            "[[notifications]]\n"
+            'name = "ntfy"\n'
+            'url = "ntfys://my-topic/"\n'
+            "attach_audio = false\n"
+        )
+
+        config = ConfigurationSettings()
+        config.init_config(
+            config_path=Path(temp_dir),
+            defaults=DEFAULT_TEST_CONFIG,
+            config_file_name="app",
+        )
+        notifications = getattr(config, "notifications", []) or []
+        assert len(notifications) == 1
+        entry = notifications[0]
+        url = (
+            entry.get("url")
+            if isinstance(entry, dict)
+            else getattr(entry, "url", None)
+        )
+        assert url == "ntfys://my-topic/"
+
+    def test_notifications_multiple_entries_parsed(self, temp_dir):
+        """Multiple [[notifications]] entries are all loaded."""
+        config_file = Path(temp_dir) / "app.toml"
+        config_file.write_text(
+            '[application]\nsite_url = ""\n\n'
+            "[[notifications]]\n"
+            'name = "email"\n'
+            'url = "mailtos://user:pass@smtp.example.com"\n'
+            "per_account = true\n\n"
+            "[[notifications]]\n"
+            'name = "slack"\n'
+            'url = "slack://TokenA/TokenB/TokenC/channel"\n'
+        )
+
+        config = ConfigurationSettings()
+        config.init_config(
+            config_path=Path(temp_dir),
+            defaults=DEFAULT_TEST_CONFIG,
+            config_file_name="app",
+        )
+        notifications = getattr(config, "notifications", []) or []
+        assert len(notifications) == 2
+
+    def test_notifications_per_account_flag_parsed(self, temp_dir):
+        """The per_account boolean field is parsed from TOML correctly."""
+        config_file = Path(temp_dir) / "app.toml"
+        config_file.write_text(
+            '[application]\nsite_url = ""\n\n'
+            "[[notifications]]\n"
+            'name = "email"\n'
+            'url = "mailtos://user:pass@smtp.example.com"\n'
+            "per_account = true\n"
+        )
+
+        config = ConfigurationSettings()
+        config.init_config(
+            config_path=Path(temp_dir),
+            defaults=DEFAULT_TEST_CONFIG,
+            config_file_name="app",
+        )
+        notifications = getattr(config, "notifications", []) or []
+        assert len(notifications) == 1
+        entry = notifications[0]
+        per_account = (
+            entry.get("per_account")
+            if isinstance(entry, dict)
+            else getattr(entry, "per_account", None)
+        )
+        assert per_account is True

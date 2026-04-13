@@ -44,6 +44,46 @@ services:
 
 :warning: TODO
 
+```toml
+# Notification channels are configured as an array of tables.
+# Each entry requires a 'name' and an Apprise-compatible 'url'.
+# Optional fields:
+#   attach_audio  (bool) — attach the source audio file to the notification
+#                          (only effective for services that support attachments)
+#   per_account   (bool) — if true, the notifier will send one notification per
+#                          subscribed account; the recipient address is appended
+#                          to the base URL as ?to=<email>.  Use this for mailto://
+#                          entries when each account should receive an individual
+#                          email through a shared SMTP relay.
+#
+# Examples:
+#
+# # Individual email per subscribed account (shared SMTP relay)
+# [[notifications]]
+# name = "Per-account email"
+# url = "mailtos://username:password@smtp.example.com?from=audihose@example.com"
+# per_account = true
+# attach_audio = false
+#
+# # A single broadcast email address
+# [[notifications]]
+# name = "Team mailing list"
+# url = "mailtos://username:password@smtp.example.com?from=audihose@example.com&to=team@example.com"
+# attach_audio = true
+#
+# # ntfy topic
+# [[notifications]]
+# name = "ntfy"
+# url = "ntfys://my-audihose-topic/"
+# attach_audio = false
+#
+# # Slack channel
+# [[notifications]]
+# name = "Slack #submissions"
+# url = "slack://TokenA/TokenB/TokenC/submissions"
+# attach_audio = false
+```
+
 ---
 
 ## Development
@@ -82,4 +122,3 @@ in `backend/audihose/templates/`.
 2. Run the command: `uvicorn audihose.main:app --reload --host 0.0.0.0`. This
 will expose the application on all interfaces on the computer running the app.
 This will allow you to test the app from other local devices.
-

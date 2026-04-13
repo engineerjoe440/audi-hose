@@ -1,276 +1,282 @@
 """Unit tests for audihose.notifier module."""
 
-# pylint: disable=too-many-function-args,broad-exception-caught,unused-argument
+# pylint: disable=broad-exception-caught,unused-argument
 
-import requests
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
 
 from audihose.notifier import (
+    _append_recipient,
     render_markdown,
-    send_email_message,
-    ntfy_publish,
+    send_notifications,
 )
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_recording(file_path: str = "/tmp/test.wav", subject: str = "Test Subject"):
+    """Return a minimal Recording-like object."""
+    return SimpleNamespace(file_path=file_path, subject=subject)
+
+
+def _make_account(email: str):
+    """Return a minimal Account-like object."""
+    return SimpleNamespace(email=email)
+
+
+def _channel(url: str, *, per_account: bool = False, attach_audio: bool = False):
+    """Return a channel config dict as simple_toml_configurator would provide."""
+    return {"url": url, "per_account": per_account, "attach_audio": attach_audio}
+
+
+# ---------------------------------------------------------------------------
+# TestMarkdownRendering
+# ---------------------------------------------------------------------------
 
 class TestMarkdownRendering:
     """Test markdown rendering and template variable substitution."""
 
     def test_render_markdown_basic(self):
-        """Test basic markdown variable substitution."""
+        """Test basic variable substitution."""
         template = "Hello {{ name }}, welcome to {{ platform }}!"
-        variables = {"name": "User", "platform": "Audi-Hose"}
-
-        result = render_markdown(template, variables)
-
+        result = render_markdown(template, name="User", platform="Audi-Hose")
         assert "User" in result
         assert "Audi-Hose" in result
         assert "{{ name }}" not in result
 
     def test_render_markdown_with_markdown_formatting(self):
-        """Test markdown formatting is preserved."""
+        """Test markdown content is passed through."""
         template = "# Header\n\n{{ message }}"
-        variables = {"message": "This is a **bold** message"}
-
-        result = render_markdown(template, variables)
-
-        assert "# Header" in result or "Header" in result
-        assert "**bold**" in result or "bold" in result
+        result = render_markdown(template, message="This is a **bold** message")
+        assert "Header" in result
+        assert "bold" in result
 
     def test_render_markdown_empty_template(self):
-        """Test rendering empty template."""
-        result = render_markdown("", {})
+        """Rendering an empty template returns a non-None value."""
+        result = render_markdown("")
         assert result is not None
 
     def test_render_markdown_missing_variable(self):
-        """Test rendering with missing variables."""
+        """Missing template variables are handled gracefully (Jinja2 default: empty string)."""
         template = "Hello {{ name }}!"
-        variables = {}
-
-        # Should handle gracefully - either empty string or raise
-        result = render_markdown(template, variables)
+        result = render_markdown(template)
         assert result is not None
 
     def test_render_markdown_multiple_variables(self):
-        """Test rendering with multiple variables."""
-        template = "{{ greeting }}, {{ name }}! Your subject: {{ subject }}"
-        variables = {
-            "greeting": "Hi",
-            "name": "John",
-            "subject": "Test Recording"
-        }
-
-        result = render_markdown(template, variables)
-
+        """Multiple keyword variables are all substituted."""
+        template = "{{ greeting }}, {{ name }}! Subject: {{ subject }}"
+        result = render_markdown(
+            template, greeting="Hi", name="John", subject="Test Recording"
+        )
         assert "Hi" in result
         assert "John" in result
         assert "Test Recording" in result
 
     def test_render_markdown_special_characters(self):
-        """Test rendering with special characters."""
+        """Special characters (e.g. @) survive rendering."""
         template = "Recipients: {{ emails }}"
-        variables = {"emails": "user@example.com, admin@example.com"}
-
-        result = render_markdown(template, variables)
+        result = render_markdown(template, emails="user@example.com")
         assert "@" in result
 
 
-class TestEmailSending:
-    """Test email sending via SMTP."""
+# ---------------------------------------------------------------------------
+# TestAppendRecipient
+# ---------------------------------------------------------------------------
 
-    def test_send_email_message_success(self, mock_smtp):
-        """Test successful email sending."""
-        from_address = "noreply@example.com"
-        to_address = "user@example.com"
-        subject = "Test Subject"
-        html_template = "<h1>Test</h1>"
-        template_variables = {}
+class TestAppendRecipient:
+    """Test the _append_recipient URL helper."""
 
-        send_email_message(from_address, to_address, subject, html_template, template_variables)
+    def test_appends_to_param(self):
+        """Recipient email is appended to the URL query string."""
+        url = "mailtos://user:pass@smtp.example.com?from=noreply@example.com"
+        result = _append_recipient(url, "person@example.com")
+        assert "to=person%40example.com" in result or "to=person@example.com" in result
 
-        # Verify SMTP was called
-        assert mock_smtp.called
+    def test_overwrites_existing_to_param(self):
+        """An existing to= query value is replaced."""
+        url = "mailtos://user:pass@smtp.example.com?to=old@example.com"
+        result = _append_recipient(url, "new@example.com")
+        assert "new" in result
+        assert "old" not in result
 
-    def test_send_email_message_with_variables(self, mock_smtp):
-        """Test email sending with template variables."""
-        from_address = "noreply@example.com"
-        to_address = "user@example.com"
-        subject = "Recording: {{ subject }}"
-        html_template = "<h1>{{ heading }}</h1>"
-        template_variables = {
-            "subject": "Podcast #1",
-            "heading": "New Recording Received"
-        }
-
-        send_email_message(from_address, to_address, subject, html_template, template_variables)
-
-        # SMTP call should include variables substituted
-        assert mock_smtp.called
-
-    def test_send_email_message_to_multiple_recipients(self, mock_smtp):
-        """Test email sending to multiple recipients."""
-        from_address = "noreply@example.com"
-        to_addresses = ["user1@example.com", "user2@example.com"]
-        subject = "Group Notification"
-        html_template = "<p>New content available</p>"
-        template_variables = {}
-
-        # Call for each recipient or with list
-        for to_addr in to_addresses:
-            send_email_message(from_address, to_addr, subject, html_template, template_variables)
-
-        # Should have been called at least twice
-        assert mock_smtp.call_count >= 1
-
-    def test_send_email_message_smtp_error_handling(self, mock_smtp):
-        """Test graceful handling of SMTP errors."""
-        mock_smtp.side_effect = Exception("SMTP connection failed")
-
-        from_address = "noreply@example.com"
-        to_address = "user@example.com"
-        subject = "Test"
-        html_template = "<p>Test</p>"
-        template_variables = {}
-
-        # Should handle error gracefully
-        try:
-            send_email_message(from_address, to_address, subject, html_template, template_variables)
-        except Exception:
-            # Error handling is implementation-specific
-            pass
-
-    def test_send_email_message_empty_recipient(self, mock_smtp):
-        """Test email with empty recipient list."""
-        from_address = "noreply@example.com"
-        to_address = ""
-        subject = "Test"
-        html_template = "<p>Test</p>"
-        template_variables = {}
-
-        # Should handle gracefully
-        try:
-            send_email_message(from_address, to_address, subject, html_template, template_variables)
-        except (ValueError, TypeError):
-            # Empty recipient might raise an error
-            pass
+    def test_preserves_other_params(self):
+        """Unrelated URL query parameters are preserved."""
+        url = "mailtos://user:pass@smtp.example.com?from=noreply@example.com"
+        result = _append_recipient(url, "person@example.com")
+        assert "from" in result
 
 
-class TestNtfyPublishing:
-    """Test ntfy push notifications."""
+# ---------------------------------------------------------------------------
+# TestAppriseNotifications
+# ---------------------------------------------------------------------------
 
-    def test_ntfy_publish_success(self, mock_ntfy):
-        """Test successful ntfy publishing."""
+class TestAppriseNotifications:
+    """Test send_notifications() dispatches correctly via Apprise."""
 
-        url = "https://ntfy.sh/audihose-notifications"
-        title = "New Recording"
-        message = "Recording received from User A"
+    def test_empty_notifications_list_is_noop(self, mocker):
+        """No Apprise instance should be created when the notifications list is empty."""
+        mock_apprise = mocker.patch("audihose.notifier.apprise.Apprise")
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        # Must also stub the template render so it doesn't need the actual file
+        mocker.patch("audihose.notifier.JINJA_ENV")
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!")
+        mock_apprise.assert_not_called()
 
-        # Mock successful response
-        mock_ntfy.return_value.status_code = 200
+    def test_system_level_channel_notified_once(self, mocker):
+        """A channel without per_account=True triggers a single notify call."""
+        mock_instance = MagicMock()
+        mock_apprise_cls = mocker.patch(
+            "audihose.notifier.apprise.Apprise",
+            return_value=mock_instance,
+        )
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[_channel("slack://TokenA/TokenB/TokenC/channel")],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!")
+        mock_apprise_cls.assert_called_once()
+        mock_instance.notify.assert_called_once()
 
-        ntfy_publish(url, title, message)
+    def test_per_account_channel_notified_once_per_account(self, mocker):
+        """A per_account=True entry triggers one notify call per account."""
+        instances = []
 
-        # Verify requests.post was called
-        assert mock_ntfy.called
+        def make_instance():
+            inst = MagicMock()
+            instances.append(inst)
+            return inst
 
-    def test_ntfy_publish_with_tags(self, mock_ntfy):
-        """Test ntfy publishing with tags."""
-        url = "https://ntfy.sh/audihose-notifications"
-        title = "New Recording"
-        message = "Recording received"
+        mocker.patch("audihose.notifier.apprise.Apprise", side_effect=make_instance)
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[_channel(
+                "mailtos://user:pass@smtp.example.com?from=noreply@example.com",
+                per_account=True,
+            )],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        accounts = [_make_account("a@example.com"), _make_account("b@example.com")]
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!", accounts=accounts)
+        assert len(instances) == 2
+        for inst in instances:
+            inst.notify.assert_called_once()
 
-        mock_ntfy.return_value.status_code = 200
+    def test_per_account_without_accounts_is_noop(self, mocker):
+        """A per_account=True entry with no accounts provided sends nothing."""
+        mock_instance = MagicMock()
+        mock_apprise_cls = mocker.patch(
+            "audihose.notifier.apprise.Apprise",
+            return_value=mock_instance,
+        )
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[_channel(
+                "mailtos://user:pass@smtp.example.com",
+                per_account=True,
+            )],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!", accounts=None)
+        mock_apprise_cls.assert_not_called()
 
-        ntfy_publish(url, title, message)
-        assert mock_ntfy.called
+    def test_attach_audio_true_passes_attach_arg(self, mocker):
+        """When attach_audio=True, the recording file path is passed to notify()."""
+        mock_instance = MagicMock()
+        mocker.patch("audihose.notifier.apprise.Apprise", return_value=mock_instance)
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[
+                _channel(
+                    "slack://TokenA/TokenB/TokenC/channel",
+                    attach_audio=True,
+                )
+            ],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording(file_path="/srv/recordings/abc.wav")
+        send_notifications(recording, "New Recording!")
+        call_kwargs = mock_instance.notify.call_args.kwargs
+        assert call_kwargs.get("attach") == "/srv/recordings/abc.wav"
 
-    def test_ntfy_publish_http_error(self, mock_ntfy):
-        """Test ntfy publishing with HTTP error."""
-        mock_ntfy.side_effect = requests.RequestException("Connection failed")
+    def test_attach_audio_false_omits_attach_arg(self, mocker):
+        """When attach_audio=False, attach is None (not sent)."""
+        mock_instance = MagicMock()
+        mocker.patch("audihose.notifier.apprise.Apprise", return_value=mock_instance)
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[_channel("slack://TokenA/TokenB/TokenC/channel", attach_audio=False)],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!")
+        call_kwargs = mock_instance.notify.call_args.kwargs
+        assert call_kwargs.get("attach") is None
 
-        url = "https://ntfy.sh/audihose-notifications"
-        title = "New Recording"
-        message = "Recording received"
+    def test_multiple_channels_all_notified(self, mocker):
+        """Multiple channel entries each produce their own Apprise call."""
+        instances = []
 
-        # Should handle gracefully
-        try:
-            ntfy_publish(url, title, message)
-        except requests.RequestException:
-            # Error handling is implementation-specific
-            pass
+        def make_instance():
+            inst = MagicMock()
+            instances.append(inst)
+            return inst
 
-    def test_ntfy_publish_network_timeout(self, mock_ntfy):
-        """Test ntfy publishing with network timeout."""
-        mock_ntfy.side_effect = requests.Timeout("Request timed out")
+        mocker.patch("audihose.notifier.apprise.Apprise", side_effect=make_instance)
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[
+                _channel("slack://TokenA/TokenB/TokenC/channel"),
+                _channel("ntfys://my-topic/"),
+            ],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!")
+        assert len(instances) == 2
+        for inst in instances:
+            inst.notify.assert_called_once()
 
-        url = "https://ntfy.sh/audihose-notifications"
-        title = "New Recording"
-        message = "Recording received"
-
-        # Should handle gracefully
-        try:
-            ntfy_publish(url, title, message)
-        except requests.Timeout:
-            pass
-
-    def test_ntfy_publish_invalid_url(self):
-        """Test ntfy publishing with invalid URL."""
-        invalid_url = "not-a-url"
-        title = "Test"
-        message = "Test message"
-
-        # Should handle invalid URL gracefully
-        try:
-            ntfy_publish(invalid_url, title, message)
-        except (ValueError, requests.RequestException):
-            pass
-
-    def test_ntfy_publish_empty_message(self, mock_ntfy):
-        """Test ntfy publishing with empty message."""
-        url = "https://ntfy.sh/audihose-notifications"
-        title = "New Recording"
-        message = ""
-
-        mock_ntfy.return_value.status_code = 200
-
-        # Should handle empty message
-        ntfy_publish(url, title, message)
-
-        # May still be called with empty message or skip
-        # Behavior depends on implementation
-
-
-class TestNotifierIntegration:
-    """Test integration between email and ntfy notifier functions."""
-
-    def test_render_and_send_email_workflow(self, mock_smtp):
-        """Test workflow of rendering template and sending email."""
-        template = "Hello {{ recipient }}, new recording: {{ subject }}"
-        variables = {"recipient": "User A", "subject": "Podcast #1"}
-
-        rendered = render_markdown(template, variables)
-
-        # Then send email with rendered content
-        send_email_message("noreply@example.com", "user@example.com", "New Recording", rendered, {})
-
-        assert mock_smtp.called
-
-    def test_multiple_recipients_notification_workflow(self, mock_smtp, mock_ntfy):
-        """Test notifying multiple recipients via email and ntfy."""
-        recipients = ["user1@example.com", "user2@example.com", "user3@example.com"]
-
-        # Send email to each recipient
-        for recipient in recipients:
-            send_email_message(
-                "noreply@example.com",
-                recipient,
-                "New Recording",
-                "<p>New content available</p>",
-                {}
-            )
-
-        # Also send ntfy notification
-        mock_ntfy.return_value.status_code = 200
-        ntfy_publish("https://ntfy.sh/topic", "New Recording", "Content available")
-
-        # Both should be invoked
-        assert mock_smtp.called
-        assert mock_ntfy.called
+    def test_channel_missing_url_is_skipped(self, mocker):
+        """A channel dict without a 'url' key is silently skipped."""
+        mock_apprise_cls = mocker.patch("audihose.notifier.apprise.Apprise")
+        mock_jinja = MagicMock()
+        mock_jinja.get_template.return_value.render.return_value = "<p>body</p>"
+        mocker.patch("audihose.notifier.JINJA_ENV", mock_jinja)
+        mocker.patch(
+            "audihose.notifier.settings",
+            notifications=[{"name": "broken channel"}],
+            application=SimpleNamespace(site_url="http://example.com"),
+        )
+        recording = _make_recording()
+        send_notifications(recording, "New Recording!")
+        mock_apprise_cls.assert_not_called()

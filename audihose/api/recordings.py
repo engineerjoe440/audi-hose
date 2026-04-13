@@ -25,8 +25,12 @@ from ..database import (
     to_recording_read,
 )
 from ..configuration import settings
+<<<<<<< HEAD
 from ..notifier import send_email_message
 from .common import get_group_or_404, require_api_auth
+=======
+from ..notifier import send_notifications
+>>>>>>> 48ffd8b (update to use apprise)
 
 
 router = APIRouter(prefix="/recordings")
@@ -132,40 +136,11 @@ def send_new_data_notification(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Recording not found.",
         )
-    subject = "New Recording!"
+    title = "New Recording!"
     if recording.subject:
-        subject += f" '{recording.subject}'"
-    for account in recording.group.accounts:
-        # Publish Notification for Account
-        send_email_message(
-            subject=subject,
-            template="",
-            to_address=account.email,
-            #kwargs
-        )
-    return {"status": "ok"}
-
-
-@router.post("/", dependencies=[Depends(require_api_auth)])
-def create_new_recording_post(
-    session: SessionDependency,
-    file: Annotated[bytes, File()],
-    subject: str = Form(...),
-    group_id: str = Form(...),
-    email: Optional[EmailStr] = Form(default=None),
-) -> RecordingRead:
-    """Compatibility endpoint for POST + file upload with `file` field name."""
-    recording_id = create_new_recording(
-        subject=subject,
-        group_id=group_id,
-        session=session,
-        recording=file,
-        email=email,
+        title += f" '{recording.subject}'"
+    send_notifications(
+        recording=recording,
+        title=title,
+        accounts=recording.group.accounts,
     )
-    created = session.get(Recording, recording_id)
-    if created is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Recording creation failed.",
-        )
-    return to_recording_read(created)

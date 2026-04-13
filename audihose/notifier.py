@@ -9,13 +9,11 @@ Author: Joe Stanley
 ################################################################################
 # pylint: disable=no-member
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from pathlib import Path
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 
-from jinja2 import Environment, FileSystemLoader, TemplateNotFound
-import requests
+import apprise
+from jinja2 import Environment, FileSystemLoader
 
 from .configuration import settings
 
@@ -26,96 +24,92 @@ JINJA_ENV = Environment(
     extensions=['jinja_markdown.MarkdownExtension'],
 )
 
-def render_markdown(markdown: str, variables: dict | None = None, **kwargs) -> str:
-    """Use markdown content to render variables in place.
+_NOTIFICATION_TEMPLATE = "new_recording.html"
 
-    Accepts either a variables dict or keyword args for compatibility.
+
+def render_markdown(markdown: str, **kwargs) -> str:
+    """Use the Markdown Content to Render Variables in Place."""
+    return JINJA_ENV.from_string(markdown).render(**kwargs)
+
+
+def _append_recipient(base_url: str, email: str) -> str:
+    """Return a copy of *base_url* with the given email appended as ?to=."""
+    parsed = urlparse(base_url)
+    params = {k: v[0] for k, v in parse_qs(parsed.query).items()}
+    params["to"] = email
+    return urlunparse(parsed._replace(query=urlencode(params)))
+
+
+def _channel_value(channel, key: str, default=None):
+    """Read a channel field from either a dict or an attribute-based object."""
+    if isinstance(channel, dict):
+        return channel.get(key, default)
+    return getattr(channel, key, default)
+
+
+def send_notifications(recording, title: str, accounts=None) -> None:
+    """Dispatch notifications for a new recording across all configured channels.
+
+    Each entry in ``settings.notifications`` is an Apprise-URL-based channel
+    descriptor with the following fields:
+
+    - ``url``         (str, required) — Apprise-compatible notification URL.
+    - ``name``        (str, optional) — Human-readable label for logging.
+    - ``attach_audio``(bool, default False) — Attach the source audio file
+                      to the notification (honoured only by services that
+                      support attachments, e.g. email, Telegram, Discord).
+    - ``per_account`` (bool, default False) — When True, one notification is
+                      sent per subscribed account by appending ``?to=<email>``
+                      to the base URL.  Use this for ``mailto://`` entries
+                      where each account should receive an individual email.
+
+    The notification body is rendered from the ``new_recording.html`` Jinja2
+    template and delivered as HTML.  Non-email Apprise plugins discard the
+    HTML tags automatically.
     """
-    render_values = dict(variables or {})
-    render_values.update(kwargs)
-    return JINJA_ENV.from_string(markdown).render(**render_values)
+    channel_configs = getattr(settings, "notifications", []) or []
+    if not channel_configs:
+        return
 
-def send_email_message(
-    *args,
-    subject: str | None = None,
-    template: str | None = None,
-    to_address: str | None = None,
-    cc_addresses: list[str] | None = None,
-    from_address: str | None = None,
-    **kwargs,
-):
-    """Send an HTML email message.
+    body = JINJA_ENV.get_template(_NOTIFICATION_TEMPLATE).render(
+        site_url=settings.application.site_url,
+        recording=recording,
+        title=title,
+    )
 
-    Supports both current keyword-style API and legacy positional API:
-    (from_address, to_address, subject, html_template, template_variables).
-    """
-    template_vars = {}
-    if args:
-        if len(args) >= 4:
-            from_address = args[0]
-            to_address = args[1]
-            subject = args[2]
-            template = args[3]
-            if len(args) >= 5 and isinstance(args[4], dict):
-                template_vars.update(args[4])
+    attachment = recording.file_path if getattr(recording, "file_path", None) else None
+
+    for channel in channel_configs:
+        url = _channel_value(channel, "url")
+        if not url:
+            continue
+        attach_audio = _channel_value(channel, "attach_audio", False)
+        per_account = _channel_value(channel, "per_account", False)
+        attach_arg = attachment if (attach_audio and attachment) else None
+
+        if per_account:
+            if not accounts:
+                continue
+            for account in accounts:
+                recipient_url = _append_recipient(url, account.email)
+                notifier = apprise.Apprise()
+                notifier.add(recipient_url)
+                notifier.notify(
+                    title=title,
+                    body=body,
+                    body_format=apprise.NotifyFormat.HTML,
+                    attach=attach_arg,
+                )
         else:
-            raise TypeError("send_email_message positional usage requires at least 4 arguments")
-
-    template_vars.update(kwargs)
-    subject = subject or "Notification"
-    template = template or ""
-    to_address = to_address or ""
-    from_address = from_address or settings.smtp.from_email
-
-    if template.strip().endswith(".html"):
-        try:
-            email_body = JINJA_ENV.get_template(template).render(
-                site_url=settings.application.site_url,
-                **template_vars,
+            notifier = apprise.Apprise()
+            notifier.add(url)
+            notifier.notify(
+                title=title,
+                body=body,
+                body_format=apprise.NotifyFormat.HTML,
+                attach=attach_arg,
             )
-        except TemplateNotFound:
-            email_body = render_markdown(template, template_vars)
-    elif "<" in template or "\n" in template or template.strip() == "":
-        email_body = render_markdown(template, template_vars)
-    else:
-        template_name = f"{template}.html"
-        try:
-            email_body = JINJA_ENV.get_template(template_name).render(
-                site_url=settings.application.site_url,
-                **template_vars,
-            )
-        except TemplateNotFound:
-            email_body = render_markdown(template, template_vars)
 
-    message = MIMEMultipart()
-    message['Subject'] = subject
-    message['From'] = from_address
-    message['To'] = to_address
-    recipients = [to_address]
-    if cc_addresses:
-        message['Cc'] = ",".join(cc_addresses)
-        recipients.extend(cc_addresses)
-
-    message.attach(MIMEText(email_body, "html"))
-
-    smtp_connection = smtplib.SMTP(
-        host=settings.smtp.server,
-        port=settings.smtp.port,
-    )
-    if settings.smtp.starttls:
-        smtp_connection.starttls()
-    if settings.smtp.username and settings.smtp.password:
-        smtp_connection.login(
-            user=settings.smtp.username,
-            password=settings.smtp.password,
-        )
-    smtp_connection.sendmail(
-        from_addr=from_address,
-        to_addrs=recipients,
-        msg=message.as_string(),
-    )
-
-    smtp_connection.quit()
 
 def ntfy_publish(
     message: str,
@@ -124,6 +118,7 @@ def ntfy_publish(
     priority: str = "default",
     tags: list[str] | None = None,
 ):
+<<<<<<< HEAD
     """Publish a message to ntfy.
 
     Supports legacy positional usage: ntfy_publish(url, title, message).
@@ -154,3 +149,26 @@ def ntfy_publish(
         headers=ntfy_headers,
         timeout=60,
     )
+=======
+    """Backwards-compatible alert publisher using configured Apprise channels.
+
+    This keeps the historical interface used in exception handlers while
+    routing delivery through the unified [[notifications]] configuration.
+    The ``priority`` and ``tags`` arguments are accepted for compatibility.
+    """
+    del priority, tags
+    channel_configs = getattr(settings, "notifications", []) or []
+    for channel in channel_configs:
+        if _channel_value(channel, "per_account", False):
+            continue
+        url = _channel_value(channel, "url")
+        if not url:
+            continue
+        notifier = apprise.Apprise()
+        notifier.add(url)
+        notifier.notify(
+            title=title,
+            body=message,
+            body_format=apprise.NotifyFormat.TEXT,
+        )
+>>>>>>> 48ffd8b (update to use apprise)

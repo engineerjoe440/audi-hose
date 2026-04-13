@@ -35,15 +35,21 @@ router = APIRouter(prefix="/accounts")
 
 def create_account(session, account_data: NewAccountData) -> str:
     """Create an Account and its Associated Login Record."""
-    try:
-        new_account = Account(name=account_data.name, email=account_data.email)
-        session.add(new_account)
-        session.flush()
-        session.add(
-            Login(
-                account_id=new_account.id,
-                hashed_password=get_hashed_password(account_data.password),
-            )
+    existing_account = session.exec(
+        select(Account).where(Account.email == account_data.email)
+    ).first()
+    if existing_account is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Account already exists.",
+        )
+    new_account = Account(name=account_data.name, email=account_data.email)
+    session.add(new_account)
+    session.flush()
+    session.add(
+        Login(
+            id=new_account.id,
+            hashed_password=get_hashed_password(account_data.password),
         )
         session.commit()
     except IntegrityError as exc:

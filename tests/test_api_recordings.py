@@ -152,7 +152,7 @@ def test_recording_endpoints_create_recording_group_not_accepting(
         },
         files={"recording": ("test.wav", audio_file, "audio/wav")},
     )
-    assert response.status_code == 200
+    assert response.status_code == 423
 
 
 def test_recording_notification_flow_create_recording_triggers_notification(
@@ -201,7 +201,7 @@ def test_recording_notification_flow_send_notification_nonexistent_recording(
 def test_recording_httpexceptions_recording_endpoint_requires_auth(client):
     """Test recording endpoints are reachable without auth."""
     response = client.get("/api/v1/recordings")
-    assert response.status_code == 200
+    assert response.status_code == 401
 
 
 def test_recording_httpexceptions_recording_operations_unauthorized(client):
@@ -224,7 +224,7 @@ def test_recording_httpexceptions_recording_operations_unauthorized(client):
         else:
             pytest.fail(f"Unhandled method: {method}")
         assert response is not None
-        assert response.status_code in (200, 404, 422), (
+        assert response.status_code == 401, (
             f"Unexpected status for {method} {endpoint}: {response.status_code}"
         )
 

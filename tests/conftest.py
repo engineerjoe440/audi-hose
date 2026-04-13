@@ -76,7 +76,10 @@ def test_account(test_db_session):
     account = Account(name="Test User", email="test@example.com")
     test_db_session.add(account)
     test_db_session.flush()
-    login = Login(id=account.id, hashed_password=get_hashed_password("testpass123"))
+    login = Login(
+        account_id=account.id,
+        hashed_password=get_hashed_password("testpass123"),
+    )
     test_db_session.add(login)
     test_db_session.commit()
     test_db_session.refresh(account)
@@ -90,7 +93,10 @@ def test_account_2(test_db_session):
     account = Account(name="Another User", email="another@example.com")
     test_db_session.add(account)
     test_db_session.flush()
-    login = Login(id=account.id, hashed_password=get_hashed_password("anotherpass123"))
+    login = Login(
+        account_id=account.id,
+        hashed_password=get_hashed_password("anotherpass123"),
+    )
     test_db_session.add(login)
     test_db_session.commit()
     test_db_session.refresh(account)

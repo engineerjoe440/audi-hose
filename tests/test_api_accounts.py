@@ -17,8 +17,9 @@ def test_account_endpoints_create_new_account_success(client, valid_jwt_token):
         },
     )
     assert response.status_code == 200
-    account_id = response.json()
-    assert isinstance(account_id, str)
+    data = response.json()
+    assert isinstance(data, dict)
+    assert isinstance(data.get("id"), str)
 
 
 def test_account_endpoints_create_account_duplicate_email(
@@ -67,11 +68,12 @@ def test_account_endpoints_get_all_accounts_empty(
 
 
 def test_account_endpoints_get_my_account(
-    client, test_user_session, test_account
+    client, valid_jwt_token, test_user_session, test_account
 ):
     """Test retrieving current user's account."""
     response = client.get(
         "/api/v1/accounts/me",
+        headers={"Authorization": f"Bearer {valid_jwt_token}"},
         cookies={"client_token": test_user_session.client_token},
     )
     assert response.status_code == 200
@@ -83,8 +85,7 @@ def test_account_endpoints_get_my_account(
 def test_account_endpoints_get_my_account_unauthorized(client):
     """Test retrieving my-account without a matching session cookie."""
     response = client.get("/api/v1/accounts/me")
-    assert response.status_code == 200
-    assert response.json() is None
+    assert response.status_code == 401
 
 
 def test_account_endpoints_get_accounts_with_associations(
@@ -109,7 +110,7 @@ def test_account_endpoints_delete_account_success(
     account = Account(name="To Delete", email="delete@example.com")
     test_db_session.add(account)
     test_db_session.flush()
-    login = Login(id=account.id, hashed_password="hash")
+    login = Login(account_id=account.id, hashed_password="hash")
     test_db_session.add(login)
     test_db_session.commit()
     test_db_session.refresh(account)
@@ -142,9 +143,9 @@ def test_account_endpoints_delete_account_invalid_id_format(client, valid_jwt_to
 @pytest.mark.parametrize(
     "endpoint,status_code",
     [
-        ("/api/v1/accounts", 200),
-        ("/api/v1/accounts/me", 200),
-        ("/api/v1/accounts/nonexistent", 405),
+        ("/api/v1/accounts", 401),
+        ("/api/v1/accounts/me", 401),
+        ("/api/v1/accounts/nonexistent", 401),
     ],
 )
 def test_account_httpexceptions_account_endpoint_errors(client, endpoint, status_code):
@@ -156,7 +157,7 @@ def test_account_httpexceptions_account_endpoint_errors(client, endpoint, status
 def test_account_httpexceptions_delete_account_unauthorized(client):
     """Test account deletion endpoint without authentication."""
     response = client.delete("/api/v1/accounts/some-id")
-    assert response.status_code == 404
+    assert response.status_code == 401
 
 
 def test_account_httpexceptions_account_modification_unauthorized(client):
@@ -165,4 +166,4 @@ def test_account_httpexceptions_account_modification_unauthorized(client):
         "/api/v1/accounts",
         json={"name": "Test", "email": "test@example.com", "password": "password"},
     )
-    assert response.status_code == 200
+    assert response.status_code == 401

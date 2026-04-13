@@ -56,7 +56,9 @@ def test_group_endpoints_create_new_group(client, valid_jwt_token):
         json={"name": "New Group", "accepting_submissions": True},
     )
     assert response.status_code == 200
-    assert isinstance(response.json(), str)
+    data = response.json()
+    assert isinstance(data, dict)
+    assert isinstance(data.get("id"), str)
 
 
 def test_group_endpoints_create_group_duplicate_name(
@@ -211,7 +213,7 @@ def test_group_endpoints_replace_membership_nonexistent_group(client, valid_jwt_
 def test_group_httpexceptions_group_endpoint_requires_auth(client):
     """Test that group endpoints are reachable without auth."""
     response = client.get("/api/v1/groups")
-    assert response.status_code == 200
+    assert response.status_code == 401
 
 
 def test_group_httpexceptions_group_operations_unauthorized(client):
@@ -239,7 +241,7 @@ def test_group_httpexceptions_group_operations_unauthorized(client):
         else:
             pytest.fail(f"Unhandled method: {method}")
         assert response is not None
-        assert response.status_code in (200, 404, 422), (
+        assert response.status_code == 401, (
             f"Unexpected status for {method} {endpoint}: {response.status_code}"
         )
 

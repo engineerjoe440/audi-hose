@@ -80,13 +80,14 @@ def test_login_model_login_creation(test_db_session):
     test_db_session.add(account)
     test_db_session.flush()
     login = Login(
-        id=account.id, hashed_password=get_hashed_password("password123")
+        account_id=account.id,
+        hashed_password=get_hashed_password("password123"),
     )
     test_db_session.add(login)
     test_db_session.commit()
     test_db_session.refresh(login)
     assert login.id is not None
-    assert login.id == account.id
+    assert login.account_id == account.id
     assert login.hashed_password is not None
 
 
@@ -96,14 +97,17 @@ def test_login_model_login_account_relationship(test_db_session):
     test_db_session.add(account)
     test_db_session.flush()
     login = Login(
-        id=account.id, hashed_password=get_hashed_password("password123")
+        account_id=account.id,
+        hashed_password=get_hashed_password("password123"),
     )
     test_db_session.add(login)
     test_db_session.commit()
 
-    stored_login = test_db_session.get(Login, account.id)
+    stored_login = test_db_session.get(Login, login.id)
     assert stored_login is not None
-    assert stored_login.id == account.id
+    assert stored_login.account_id == account.id
+    assert stored_login.account is not None
+    assert stored_login.account.email == account.email
 
 
 def test_publication_group_model_publication_group_creation(test_db_session):
@@ -176,7 +180,7 @@ def test_recording_model_recording_time_auto_set(
     test_db_session, test_account, test_group
 ):
     """Test that recording time is auto-set."""
-    before_time = datetime.now()
+    before_time = datetime.utcnow()
     recording = Recording(
         subject="Test Podcast",
         email=test_account.email,
@@ -186,7 +190,7 @@ def test_recording_model_recording_time_auto_set(
     test_db_session.add(recording)
     test_db_session.commit()
     test_db_session.refresh(recording)
-    after_time = datetime.now()
+    after_time = datetime.utcnow()
     assert before_time <= recording.time <= after_time
 
 

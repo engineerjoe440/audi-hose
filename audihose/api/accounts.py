@@ -44,12 +44,14 @@ def create_account(session, account_data: NewAccountData) -> str:
             detail="Account already exists.",
         )
     new_account = Account(name=account_data.name, email=account_data.email)
-    session.add(new_account)
-    session.flush()
-    session.add(
-        Login(
-            id=new_account.id,
-            hashed_password=get_hashed_password(account_data.password),
+    try:
+        session.add(new_account)
+        session.flush()
+        session.add(
+            Login(
+                account_id=new_account.id,
+                hashed_password=get_hashed_password(account_data.password),
+            )
         )
         session.commit()
     except IntegrityError as exc:

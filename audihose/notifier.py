@@ -118,45 +118,13 @@ def ntfy_publish(
     priority: str = "default",
     tags: list[str] | None = None,
 ):
-<<<<<<< HEAD
-    """Publish a message to ntfy.
-
-    Supports legacy positional usage: ntfy_publish(url, title, message).
-    """
-    url_override = None
-    payload = message
-    if publish_message is not None:
-        url_override = message
-        payload = publish_message
-
-    publish_url = url_override or (
-        f"{settings.ntfy.server}/{settings.ntfy.topic}" if settings.ntfy.server else None
-    )
-    if not publish_url:
-        return
-
-    ntfy_headers = {"Title": title}
-    if priority:
-        ntfy_headers["Priority"] = priority
-    if tags:
-        ntfy_headers["Tags"] = ",".join(tags)
-    if settings.ntfy.token:
-        ntfy_headers["Authorization"] = f"Bearer {settings.ntfy.token}"
-
-    requests.post(
-        publish_url,
-        data=payload,
-        headers=ntfy_headers,
-        timeout=60,
-    )
-=======
     """Backwards-compatible alert publisher using configured Apprise channels.
 
     This keeps the historical interface used in exception handlers while
     routing delivery through the unified [[notifications]] configuration.
     The ``priority`` and ``tags`` arguments are accepted for compatibility.
     """
-    del priority, tags
+    del priority, tags, publish_message
     channel_configs = getattr(settings, "notifications", []) or []
     for channel in channel_configs:
         if _channel_value(channel, "per_account", False):
@@ -171,4 +139,3 @@ def ntfy_publish(
             body=message,
             body_format=apprise.NotifyFormat.TEXT,
         )
->>>>>>> 48ffd8b (update to use apprise)

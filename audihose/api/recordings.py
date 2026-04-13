@@ -11,7 +11,7 @@ Author: Joe Stanley
 from typing import Annotated, Optional
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import EmailStr
 from sqlalchemy.orm import selectinload
@@ -25,12 +25,8 @@ from ..database import (
     to_recording_read,
 )
 from ..configuration import settings
-<<<<<<< HEAD
-from ..notifier import send_email_message
-from .common import get_group_or_404, require_api_auth
-=======
 from ..notifier import send_notifications
->>>>>>> 48ffd8b (update to use apprise)
+from .common import get_group_or_404, require_api_auth
 
 
 router = APIRouter(prefix="/recordings")

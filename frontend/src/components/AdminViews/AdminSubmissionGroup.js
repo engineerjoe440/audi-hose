@@ -74,6 +74,13 @@ const headCells = [
     disablePadding: true,
     label: 'Time',
   },
+  {
+    id: 'actions',
+    numeric: false,
+    disablePadding: true,
+    label: 'Actions',
+    hideOnMobile: true,
+  }
 ];
 
 function EnhancedTableHead(props) {
@@ -354,6 +361,9 @@ export function AdminSubmissionGroup(props) {
                     </TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.email}</TableCell>
                     <TableCell>{row.time}</TableCell>
+                    <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                      <a href={`/recordings/${row.id}`} target="_blank" rel="noopener noreferrer">Play</a>
+                    </TableCell>
                   </TableRow>
                 );
               })}

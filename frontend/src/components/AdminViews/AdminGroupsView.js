@@ -1,5 +1,7 @@
 import * as React from 'react';
-import { Box, Typography, Fab } from '@mui/material';
+import { Box, Typography, Fab, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import ScienceIcon from '@mui/icons-material/Science';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -36,6 +38,7 @@ export function AdminGroupsView() {
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>ID</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -48,6 +51,17 @@ export function AdminGroupsView() {
                   {row.name}
                 </TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.id}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  <Link
+                    component={RouterLink}
+                    to={`/component/${row.id}`}
+                    aria-label="Test Component"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <ScienceIcon />
+                  </Link>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

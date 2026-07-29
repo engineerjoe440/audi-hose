@@ -2,8 +2,8 @@
 
 import pytest
 
-from audihose.database import Account, Login
 from audihose.authentication import JWTBearer
+from audihose.database import Account, Login
 
 
 def _login_payload(test_account, client_token, password="testpass123", remember_me=False):

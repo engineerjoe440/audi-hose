@@ -10,11 +10,12 @@ Author: Joe Stanley
 # pylint: disable=no-member
 
 import datetime
-from typing import Annotated
-from pathlib import Path
 from contextlib import asynccontextmanager
+from pathlib import Path
+from typing import Annotated
+from zoneinfo import ZoneInfo
 
-from fastapi import FastAPI, Request, Cookie
+from fastapi import Cookie, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -24,22 +25,23 @@ from loguru import logger
 from . import __header__, __version__, api, authentication
 from .configuration import settings
 from .database import (
+    DEFAULT_GROUP_ID,
     Account,
     SessionDependency,
     create_database_tables,
-    DEFAULT_GROUP_ID,
-)
-from .sessions import (
-    SessionManager,
-    get_session,
-    REMEMBER_ME_INACTIVITY_SECONDS,
 )
 from .notifier import ntfy_publish
-
+from .sessions import (
+    REMEMBER_ME_INACTIVITY_SECONDS,
+    SessionManager,
+    get_session,
+)
 
 __html_header__ = __header__.replace("\n", r"\n")
 
 APP_COOKIE_NAME = "client_token"
+
+LOCAL_TZ = ZoneInfo("localtime")
 
 
 def _set_session_cookie(response: HTMLResponse, client_token: str):
@@ -107,11 +109,7 @@ def root(
     """Server Root."""
     template = "index.html"
     active_session = get_session(client_token=client_token) if client_token else None
-    if not client_token:
-        client_token = SessionManager.create_session()
-        active_session = get_session(client_token=client_token)
-        template = "landing.html"
-    elif not active_session:
+    if not client_token or not active_session:
         client_token = SessionManager.create_session()
         active_session = get_session(client_token=client_token)
         template = "landing.html"
@@ -122,7 +120,7 @@ def root(
         "request": request,
         APP_COOKIE_NAME: client_token,
         "console_app_name": __html_header__,
-        "year": datetime.datetime.now().year,
+        "year": datetime.datetime.now(LOCAL_TZ).year,
     }
     if account_id is not None:
         account = session.get(Account, account_id)
@@ -145,9 +143,7 @@ def component_root(
 ) -> HTMLResponse:
     """Server Root."""
     active_session = get_session(client_token=client_token) if client_token else None
-    if not client_token:
-        client_token = SessionManager.create_session()
-    elif not active_session:
+    if not client_token or not active_session:
         client_token = SessionManager.create_session()
     # Fall Back to Landing Page
     response = TEMPLATES.TemplateResponse(
@@ -157,7 +153,7 @@ def component_root(
             "request": request,
             APP_COOKIE_NAME: client_token,
             "console_app_name": __html_header__,
-            "year": datetime.datetime.now().year,
+            "year": datetime.datetime.now(LOCAL_TZ).year,
             "host_url": settings.application.site_url,
             "default_group_id": DEFAULT_GROUP_ID,
         },
@@ -178,9 +174,7 @@ def app_base(
 ) -> HTMLResponse:
     """Application Base."""
     active_session = get_session(client_token=client_token) if client_token else None
-    if not client_token:
-        client_token = SessionManager.create_session()
-    elif not active_session:
+    if not client_token or not active_session:
         client_token = SessionManager.create_session()
     # Fall Back to Landing Page
     response = TEMPLATES.TemplateResponse(

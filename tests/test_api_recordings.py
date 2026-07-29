@@ -3,6 +3,7 @@
 import io
 
 import pytest
+
 from audihose.database import PublicationGroup, Recording
 
 

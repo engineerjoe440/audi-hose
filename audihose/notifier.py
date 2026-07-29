@@ -10,7 +10,7 @@ Author: Joe Stanley
 # pylint: disable=no-member
 
 from pathlib import Path
-from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import apprise
 from jinja2 import Environment, FileSystemLoader

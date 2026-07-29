@@ -26,7 +26,6 @@ from ..database import (
 )
 from .common import get_account_or_404, get_group_or_404, require_api_auth
 
-
 router = APIRouter(prefix="/groups")
 
 

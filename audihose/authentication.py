@@ -8,27 +8,34 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from typing import Annotated, Union
+from typing import Annotated
 
 from fastapi import (
-    Request, APIRouter, HTTPException, status, Query, Cookie, Depends, Response, Header
+    APIRouter,
+    Cookie,
+    Depends,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    status,
 )
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.encoders import jsonable_encoder
-from pydantic import BaseModel
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from loguru import logger
+from pydantic import BaseModel
 from sqlmodel import select
 
-from .sessions import (
-    get_session,
-    close_session,
-    SessionManager,
-    REMEMBER_ME_INACTIVITY_SECONDS,
-)
-from .database import Account, Login, NewAccountData, SessionDependency
-from .security import verify_token, decode_jwt, check_password, sign_jwt
 from .api.accounts import create_account
-
+from .database import Account, Login, NewAccountData, SessionDependency
+from .security import check_password, decode_jwt, sign_jwt, verify_token
+from .sessions import (
+    REMEMBER_ME_INACTIVITY_SECONDS,
+    SessionManager,
+    close_session,
+    get_session,
+)
 
 router = APIRouter()
 REVOKED_TOKENS: set[str] = set()
@@ -43,8 +50,8 @@ class LoginItem(BaseModel):
 
 class TokenResponse(BaseModel):
     """JSON Web Token Response for Authentication."""
-    token: Union[str, None] = None
-    message: Union[str, None] = None
+    token: str | None = None
+    message: str | None = None
 
 
 COOKIE_NAME = "client_token"
@@ -84,7 +91,7 @@ class JWTBearer(HTTPBearer):
     async def __call__(self, req: Request):
         credentials: HTTPAuthorizationCredentials = await super().__call__(req)
         if credentials:
-            if not credentials.scheme == "Bearer":
+            if credentials.scheme != "Bearer":
                 logger.warning("Invalid authentication scheme.")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,

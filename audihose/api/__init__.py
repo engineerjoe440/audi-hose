@@ -12,11 +12,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 
-from . import recordings, accounts, groups
-from .common import require_api_auth
-from ..database import Account, SessionDependency
+from ..database import Account, SessionDependency, to_account_summary
 from ..security import decode_jwt, verify_token
-from ..database import to_account_summary
+from . import accounts, groups, recordings
+from .common import require_api_auth
 
 router = APIRouter(prefix="/api/v1")
 

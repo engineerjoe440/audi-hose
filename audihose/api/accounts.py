@@ -11,9 +11,9 @@ Author: Joe Stanley
 from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, status
-from sqlmodel import select
-from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
+from sqlmodel import select
 
 from ..database import (
     Account,
@@ -28,7 +28,6 @@ from ..database import (
 from ..security import get_hashed_password
 from ..sessions import get_session as get_user_session
 from .common import get_account_or_404, require_api_auth
-
 
 router = APIRouter(prefix="/accounts")
 

@@ -5,10 +5,10 @@ import time
 import pytest
 
 from audihose.security import (
-    get_hashed_password,
     check_password,
-    sign_jwt,
     decode_jwt,
+    get_hashed_password,
+    sign_jwt,
     verify_token,
 )
 

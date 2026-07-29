@@ -9,12 +9,11 @@ Author: Joe Stanley
 ################################################################################
 
 import os
-from pathlib import Path
 from collections.abc import Mapping
+from pathlib import Path
 
 from simple_toml_configurator import Configuration
 from simple_toml_configurator.toml_configurator import ConfigObject
-
 
 CONFIG_FILE_PATH = Path(os.getenv("CONFIG_FILE", "./config"))
 

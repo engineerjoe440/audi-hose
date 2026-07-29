@@ -8,7 +8,7 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from typing import Annotated, Optional
+from typing import Annotated
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, status
@@ -17,6 +17,7 @@ from pydantic import EmailStr
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
+from ..configuration import settings
 from ..database import (
     PublicationGroup,
     Recording,
@@ -24,10 +25,8 @@ from ..database import (
     SessionDependency,
     to_recording_read,
 )
-from ..configuration import settings
 from ..notifier import send_notifications
 from .common import get_group_or_404, require_api_auth
-
 
 router = APIRouter(prefix="/recordings")
 
@@ -85,7 +84,7 @@ def create_new_recording(
     group_id: str,
     session: SessionDependency,
     recording: Annotated[bytes, File()],
-    email: Optional[EmailStr] = None,
+    email: EmailStr | None = None,
 ) -> str:
     """Create a New Recording."""
     recording_id = str(uuid4())

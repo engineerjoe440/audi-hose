@@ -9,17 +9,18 @@ Author: Joe Stanley
 ################################################################################
 
 
-from typing import Union
-from uuid import uuid4
 from datetime import datetime, timedelta
+from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from pydantic import EmailStr
-
 
 DEFAULT_INACTIVITY_PERIOD = timedelta(minutes=30)
 REMEMBER_ME_INACTIVITY_PERIOD = timedelta(days=30)
 DEFAULT_INACTIVITY_SECONDS = int(DEFAULT_INACTIVITY_PERIOD.total_seconds())
 REMEMBER_ME_INACTIVITY_SECONDS = int(REMEMBER_ME_INACTIVITY_PERIOD.total_seconds())
+
+LOCAL_TZ = ZoneInfo("localtime")
 
 
 class UserSession:
@@ -49,7 +50,7 @@ class UserSession:
         if remember_me:
             self.configure_authenticated(remember_me=True)
 
-    def __eq__(self, __value: object) -> bool:
+    def __eq__(self, /, __value: object) -> bool:
         """Equivalence is Based on `client_token` of Object."""
         if isinstance(__value, UserSession):
             return __value.client_token == self.client_token
@@ -59,7 +60,7 @@ class UserSession:
 
     def access(self):
         """Record the Access Time."""
-        self.last_access = datetime.now()
+        self.last_access = datetime.now(LOCAL_TZ)
 
     @property
     def token(self) -> str:
@@ -82,7 +83,7 @@ class UserSession:
         if isinstance(new, datetime):
             self.last_access = new
             return
-        self.last_access = datetime.fromtimestamp(float(new))
+        self.last_access = datetime.fromtimestamp(float(new), LOCAL_TZ)
 
     @property
     def email(self):
@@ -107,9 +108,7 @@ class UserSession:
     @property
     def stale(self) -> bool:
         """Indicator that User Session has Remained Unused for Some Time."""
-        if (datetime.now() - self.last_access) > self.inactivity_period:
-            return True
-        return False
+        return (datetime.now(LOCAL_TZ) - self.last_access) > self.inactivity_period
 
     def close(self):
         """Close the Session."""
@@ -140,7 +139,7 @@ class SessionManager:
     def __new__(cls):
         """Generate as a Singleton Object."""
         if not hasattr(cls, '__instance'):
-            cls.__instance = super(SessionManager, cls).__new__(cls)
+            cls.__instance = super().__new__(cls)
         return cls.__instance
 
     def __init__(self) -> None:
@@ -182,7 +181,7 @@ class SessionManager:
             return new_user_session
         return new_user_session.client_token
 
-    def get_session(self, client_token: str) -> Union[UserSession, None]:
+    def get_session(self, client_token: str) -> UserSession | None:
         """Get the Specific User Session Based on the Client Token."""
         for idx, session in enumerate(self.user_sessions):
             if session == client_token:
@@ -213,12 +212,12 @@ class SessionManager:
                 continue
             idx += 1 # increment if session was not stale
 
-def get_session(client_token: str) -> Union[UserSession, None]:
+def get_session(client_token: str) -> UserSession | None:
     """Get a Session from the Global Reference Without the Manager."""
     temp_manager = SessionManager()
     return temp_manager.get_session(client_token=client_token)
 
-def close_session(client_token: str) -> Union[UserSession, None]:
+def close_session(client_token: str) -> UserSession | None:
     """Get a Session from the Global Reference Without the Manager."""
     temp_manager = SessionManager()
     return temp_manager.close_session(client_token=client_token)

@@ -8,17 +8,15 @@ Author: Joe Stanley
 """
 ################################################################################
 
-from pathlib import Path
-from typing import Annotated, List, Optional
-from uuid import uuid4
 from datetime import datetime
+from pathlib import Path
+from typing import Annotated, Optional
+from uuid import uuid4
 
 from fastapi import Depends
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import Column, DateTime
-from sqlmodel import (
-    Field, Relationship, SQLModel, Session, create_engine, select
-)
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine, select
 
 from .configuration import CONFIG_FILE_PATH
 
@@ -81,7 +79,7 @@ class PublicationGroupUpdate(PublicationGroupCreate):
 
 class AccountMembershipUpdate(BaseModel):
     """Replacement Membership List for a Group."""
-    account_ids: List[str]
+    account_ids: list[str]
 
 
 class RecordingRead(BaseModel):
@@ -89,7 +87,7 @@ class RecordingRead(BaseModel):
     id: str
     time: datetime
     subject: str
-    email: Optional[EmailStr] = None
+    email: EmailStr | None = None
     group_id: str
     file_path: str
 
@@ -114,7 +112,7 @@ class Account(SQLModel, table=True):
     name: str
     email: EmailStr = Field(index=True, unique=True)
     login: Optional["Login"] = Relationship(back_populates="account")
-    groups: List["PublicationGroup"] = Relationship(
+    groups: list["PublicationGroup"] = Relationship(
         back_populates="accounts",
         link_model=PublicationGroupAccountLink,
     )
@@ -137,20 +135,20 @@ class PublicationGroup(SQLModel, table=True):
     id: str = Field(default_factory=generate_identifier, primary_key=True)
     name: str
     accepting_submissions: bool = True
-    accounts: List["Account"] = Relationship(
+    accounts: list["Account"] = Relationship(
         back_populates="groups",
         link_model=PublicationGroupAccountLink,
     )
-    recordings: List["Recording"] = Relationship(back_populates="group")
+    recordings: list["Recording"] = Relationship(back_populates="group")
 
 
 class AccountWithGroups(AccountData):
     """Account With Groups Information."""
     id: str
-    associations: List[PublicationGroupSummary]
+    associations: list[PublicationGroupSummary]
 
     @property
-    def groups(self) -> List[PublicationGroupSummary]:
+    def groups(self) -> list[PublicationGroupSummary]:
         """Backward-compatible alias for associations."""
         return self.associations
 
@@ -162,10 +160,10 @@ class Recording(SQLModel, table=True):
     id: str = Field(default_factory=generate_identifier, primary_key=True)
     time: datetime = Field(sa_column=Column(DateTime, default=datetime.utcnow))
     subject: str
-    email: Optional[EmailStr] = None
+    email: EmailStr | None = None
     file_path: str
     group_id: str = Field(foreign_key="publication_group.id", index=True)
-    group: Optional[PublicationGroup] = Relationship(back_populates="recordings")
+    group: PublicationGroup | None = Relationship(back_populates="recordings")
 
 
 def to_account_summary(account: Account) -> AccountSummary:
@@ -204,7 +202,7 @@ def to_recording_read(recording: Recording) -> RecordingRead:
     )
 
 engine = create_engine(f"sqlite:///{DB_FILE}", echo=ECHO)
-session: Optional[Session] = None
+session: Session | None = None
 
 DB_FILE.parent.mkdir(parents=True, exist_ok=True)
 engine = create_engine(
@@ -228,7 +226,7 @@ def get_session():
 SessionDependency = Annotated[Session, Depends(get_session)]
 
 
-def ensure_default_publication_group(db_session: Optional[Session] = None) -> str:
+def ensure_default_publication_group(db_session: Session | None = None) -> str:
     """Create the default group once and return its identifier.
 
     Accepts an optional explicit session for test compatibility.

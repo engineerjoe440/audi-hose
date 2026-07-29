@@ -1,23 +1,26 @@
 """Unit tests for audihose.database module."""
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pytest
 from sqlalchemy import inspect
 
-from audihose.security import get_hashed_password
 from audihose.database import (
     Account,
     Login,
     PublicationGroup,
     Recording,
-    generate_identifier,
     ensure_default_publication_group,
+    generate_identifier,
     to_account_summary,
+    to_account_with_groups,
     to_group_summary,
     to_recording_read,
-    to_account_with_groups,
 )
+from audihose.security import get_hashed_password
+
+ZONE_LOCAL = ZoneInfo("localtime")
 
 
 def test_identifier_generation_generate_identifier_returns_string():
@@ -42,7 +45,7 @@ def test_identifier_generation_generate_identifier_uniqueness():
 def test_identifier_generation_generate_identifier_format():
     """Test that generated identifier has valid UUID format."""
     identifier = generate_identifier()
-    assert all((c in "0123456789abcdef-" for c in identifier.lower()))
+    assert all(c in "0123456789abcdef-" for c in identifier.lower())
 
 
 def test_account_model_account_creation(test_db_session):
@@ -180,7 +183,7 @@ def test_recording_model_recording_time_auto_set(
     test_db_session, test_account, test_group
 ):
     """Test that recording time is auto-set."""
-    before_time = datetime.utcnow()
+    before_time = datetime.now(ZONE_LOCAL)
     recording = Recording(
         subject="Test Podcast",
         email=test_account.email,
@@ -190,7 +193,7 @@ def test_recording_model_recording_time_auto_set(
     test_db_session.add(recording)
     test_db_session.commit()
     test_db_session.refresh(recording)
-    after_time = datetime.utcnow()
+    after_time = datetime.now(ZONE_LOCAL)
     assert before_time <= recording.time <= after_time
 
 
@@ -284,9 +287,9 @@ def test_create_database_tables_create_database_tables_creates_all_models(
     inspector = inspect(test_db_session.get_bind())
     table_names = inspector.get_table_names()
     table_names_lower = [t.lower() for t in table_names]
-    assert any(("account" in t for t in table_names_lower))
-    assert any(("login" in t for t in table_names_lower))
-    assert any(("publicationgroup" in t for t in table_names_lower)) or any(
-        ("publication" in t for t in table_names_lower)
+    assert any("account" in t for t in table_names_lower)
+    assert any("login" in t for t in table_names_lower)
+    assert any("publicationgroup" in t for t in table_names_lower) or any(
+        "publication" in t for t in table_names_lower
     )
-    assert any(("recording" in t for t in table_names_lower))
+    assert any("recording" in t for t in table_names_lower)

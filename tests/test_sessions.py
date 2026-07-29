@@ -2,8 +2,8 @@
 
 import time
 
-from audihose.sessions import UserSession, SessionManager
 from audihose.security import sign_jwt
+from audihose.sessions import SessionManager, UserSession
 
 
 def test_user_session_user_session_creation(test_account):

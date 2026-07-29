@@ -12,21 +12,22 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
-from sqlmodel import SQLModel, Session as SQLModelSession
+from sqlmodel import Session as SQLModelSession
+from sqlmodel import SQLModel
 
-from audihose.main import app
 from audihose.authentication import JWTBearer
+from audihose.configuration import ConfigurationSettings
 from audihose.database import (
-    Account,
     DEFAULT_GROUP_NAME,
+    Account,
     Login,
     PublicationGroup,
     Recording,
     get_session,
 )
+from audihose.main import app
 from audihose.security import get_hashed_password, sign_jwt
 from audihose.sessions import SessionManager
-from audihose.configuration import ConfigurationSettings
 
 
 @pytest.fixture

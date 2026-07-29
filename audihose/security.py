@@ -8,8 +8,8 @@ Author: Joe Stanley
 """
 ################################################################################
 
-import time
 import secrets
+import time
 from datetime import timedelta
 
 import bcrypt

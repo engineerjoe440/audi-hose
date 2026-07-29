@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+
 from audihose.notifier import _append_recipient, render_markdown, send_notifications
 
 

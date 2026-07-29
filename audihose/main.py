@@ -136,9 +136,10 @@ def root(
     return response
 
 
-@app.get("/component", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/component/{group_id}", response_class=HTMLResponse, include_in_schema=False)
 def component_root(
     request: Request,
+    group_id: str | None = DEFAULT_GROUP_ID,
     client_token: Annotated[str | None, Cookie()] = None,
 ) -> HTMLResponse:
     """Server Root."""
@@ -148,14 +149,14 @@ def component_root(
     # Fall Back to Landing Page
     response = TEMPLATES.TemplateResponse(
         request,
-        "component.html",
+        "component_example.html",
         context={
             "request": request,
             APP_COOKIE_NAME: client_token,
             "console_app_name": __html_header__,
             "year": datetime.datetime.now(LOCAL_TZ).year,
             "host_url": settings.application.site_url,
-            "default_group_id": DEFAULT_GROUP_ID,
+            "group_id": group_id,
         },
     )
     _set_session_cookie(response, client_token)

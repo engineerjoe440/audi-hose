@@ -20,6 +20,7 @@
     <script>
       window.client_token="{{client_token}}";
       window.account_name="{{account_name}}";
+      console.log("Host URL: <{{host_url}}>");
     </script>
   </head>
   <body>
@@ -39,8 +40,8 @@
     data-color="green"
     data-prompt="Send a Recording..."
     data-audihose-url="{{host_url}}"
-    data-group-id="{{default_group_id}}"
+    data-group-id="{{group_id}}"
     style="width: 250px; margin: auto; margin-top: 20px"></div>
-    
+
   </body>
 </html>

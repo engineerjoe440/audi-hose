@@ -78,7 +78,7 @@ def get_single_recording(
 
     return StreamingResponse(inner_iter(), media_type="audio/mp3")
 
-@router.put("/", dependencies=[Depends(require_api_auth)])
+@router.put("/")
 def create_new_recording(
     subject: str,
     group_id: str,

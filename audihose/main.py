@@ -137,6 +137,7 @@ def root(
     return response
 
 
+@app.get("/component", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/component/{group_id}", response_class=HTMLResponse, include_in_schema=False)
 def component_root(
     request: Request,

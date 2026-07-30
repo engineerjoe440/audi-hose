@@ -12,6 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from fastapi import Depends
 from pydantic import BaseModel, EmailStr
@@ -31,6 +32,8 @@ ECHO = False
 
 DEFAULT_GROUP_NAME = "DEFAULT-PUBLICATION-GROUP"
 DEFAULT_GROUP_ID = None
+
+LOCAL_TZ = ZoneInfo("localtime")
 
 
 ##  Models  ####################################################################
@@ -158,7 +161,9 @@ class Recording(SQLModel, table=True):
     __tablename__ = "recording"
 
     id: str = Field(default_factory=generate_identifier, primary_key=True)
-    time: datetime = Field(sa_column=Column(DateTime, default=datetime.utcnow))
+    time: datetime = Field(
+        sa_column=Column(DateTime, default=lambda: datetime.now(LOCAL_TZ))
+    )
     subject: str
     email: EmailStr | None = None
     file_path: str

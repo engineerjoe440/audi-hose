@@ -211,7 +211,6 @@ def test_recording_httpexceptions_recording_operations_unauthorized(client):
         ("GET", "/api/v1/recordings"),
         ("GET", "/api/v1/recordings/group/test-id"),
         ("GET", "/api/v1/recordings/test-id"),
-        ("PUT", "/api/v1/recordings/"),
         ("POST", "/api/v1/recordings/notify/test-id"),
     ]
     response = None

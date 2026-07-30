@@ -4,6 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 import pytest
+import sqlalchemy
 from sqlalchemy import inspect
 
 from audihose.database import (
@@ -63,7 +64,7 @@ def test_account_model_account_unique_email(test_db_session, test_account):
     """Test that account emails are unique."""
     duplicate = Account(name="Another", email=test_account.email)
     test_db_session.add(duplicate)
-    with pytest.raises(Exception):
+    with pytest.raises(sqlalchemy.exc.IntegrityError):
         test_db_session.commit()
 
 

@@ -14,6 +14,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
 import PersonIcon from '@mui/icons-material/Person';
 import AllInboxIcon from '@mui/icons-material/AllInbox';
+import SendIcon from '@mui/icons-material/Send';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { getGroupsListByAccount } from '../../api/groups';
@@ -76,6 +77,19 @@ export default function AdminAppDrawer(props) {
                   <AllInboxIcon />
                 </ListItemIcon>
                 {!isCompact && <ListItemText primary={"Groups"} />}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+          <ListItem key={"publishers"} disablePadding>
+            <Tooltip title={isCompact ? 'Publishers' : ''} placement="right">
+              <ListItemButton
+                onClick={() => {props.onNavigate({page: "Publishers"})}}
+                sx={{ justifyContent: isCompact ? 'center' : 'flex-start', px: 1.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 0, mr: isCompact ? 0 : 1.5, justifyContent: 'center' }}>
+                  <SendIcon />
+                </ListItemIcon>
+                {!isCompact && <ListItemText primary={"Publishers"} />}
               </ListItemButton>
             </Tooltip>
           </ListItem>

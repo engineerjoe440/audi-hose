@@ -33,9 +33,20 @@ const themeDefinitions = {
     label: 'On-Air Contrast',
     mode: 'dark',
     palette: {
-      primary: { main: '#1EA7C9', text: '#0A0F1A' },
-      secondary: { main: '#FF4B1F', alt: '#123247', altTable: '#1A3F57', text: '#D9DEE5' },
-      background: { default: '#0A0F1A', paper: '#123247' },
+      primary: {
+        main: '#1FB8E0',      // brighter cyan for stronger contrast
+        text: '#00040A'       // near‑black for maximum readability
+      },
+      secondary: {
+        main: '#FF3A00',      // deeper, more contrast‑stable orange/red
+        alt: '#0E2A3A',       // darker blue‑black for UI chrome
+        altTable: '#15445C',  // boosted contrast for table backgrounds
+        text: '#F2F6FA'       // very light gray for consistent legibility
+      },
+      background: {
+        default: '#00040A',   // true dark for high contrast
+        paper: '#0E2A3A'      // slightly lighter but still contrast‑safe
+      },
     },
   },
   cinematicTech: {
@@ -51,27 +62,29 @@ const themeDefinitions = {
     label: 'Warm Broadcast',
     mode: 'light',
     palette: {
-      primary: { main: '#1C3D52', text: '#FFFFFF' },
-      secondary: { main: '#FF5E2E', alt: '#2A7FA1', altTable: '#DDE8EE', text: '#101820' },
-      background: { default: '#FFD07A', paper: '#FFFFFF' },
-    },
-  },
-  minimalDarkUi: {
-    label: 'Minimal Dark UI',
-    mode: 'dark',
-    palette: {
-      primary: { main: '#1F9BBF', text: '#E8EEF4' },
-      secondary: { main: '#FF5522', alt: '#162B3A', altTable: '#1D3548', text: '#E8EEF4' },
-      background: { default: '#0B1220', paper: '#162B3A' },
+      primary: { main: '#9a8661', text: '#FFFFFF' },
+      secondary: { main: '#a2553e', alt: '#DAA06D', altTable: '#ede8e1', text: '#6E260E' },
+      background: { default: '#cbbca0', paper: '#FFFFFF' },
     },
   },
   afterhoursGlow: {
     label: 'Afterhours Glow',
     mode: 'dark',
     palette: {
-      primary: { main: '#0AB1C9', text: '#142734' },
-      secondary: { main: '#C4724F', alt: '#106682', altTable: '#0B8BA9', text: '#EAF7FA' },
-      background: { default: '#142734', paper: '#106682' },
+      primary: {
+        main: '#7AF28A',      // soft terminal‑green glow
+        text: '#0F1A17'       // deep green‑black for contrast
+      },
+      secondary: {
+        main: '#4FAF6F',      // muted green accent
+        alt: '#1F3A32',       // darker teal‑green for UI chrome
+        altTable: '#2C5A45',  // subtle table highlight
+        text: '#D8F5E0'       // pale greenish text for readability
+      },
+      background: {
+        default: '#0A0F0A',   // near‑black with a green tint
+        paper: '#112018'      // slightly lighter panel background
+      },
     },
   },
   colorful: {

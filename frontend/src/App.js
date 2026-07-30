@@ -5,6 +5,7 @@ import AppBase from './components/AppBase';
 import { AdminAccountsView } from './components/AdminViews/AdminAccountsView';
 import { AdminGroupsView } from './components/AdminViews/AdminGroupsView';
 import { AdminSubmissionGroup } from './components/AdminViews/AdminSubmissionGroup';
+import { AdminPublishersView } from './components/AdminViews/AdminPublishersView';
 
 export default function AdminApp() {
   let [searchParams, setSearchParams] = useSearchParams({page: "Accounts"});
@@ -21,9 +22,9 @@ export default function AdminApp() {
     <AppBase bannerTitle="Audi-Hose" onNavigate={navigate} >
       {searchParams.get("page") === "Accounts" && <AdminAccountsView />}
       {searchParams.get("page") === "Groups" && <AdminGroupsView />}
+      {searchParams.get("page") === "Publishers" && <AdminPublishersView />}
       {searchParams.get("page") === "Submissions" &&
         <AdminSubmissionGroup group={searchParams.get("submissionGroup")} />}
     </AppBase>
   );
 }
-

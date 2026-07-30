@@ -1,0 +1,70 @@
+import * as React from 'react';
+import { Box, Typography, Fab, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import ScienceIcon from '@mui/icons-material/Science';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import AddIcon from '@mui/icons-material/Add';
+
+
+export function AdminPublishersView() {
+    const [groups, setGroups] = React.useState([]);
+    const [open, setOpen] = React.useState(false);
+
+    React.useEffect(()=>{
+      // Load Requisites when page Completes
+      //getPublishersList({onSet: setGroups});
+    },[]);
+
+  return (
+    <>
+      {/* <NewPublisherDialog open={open} onClose={() => {setOpen(false)}} /> */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <Typography variant='h3'>Publishers</Typography>
+        <Fab color="primary" aria-label="add" onClick={() => {setOpen(true)}}>
+          <AddIcon />
+        </Fab>
+      </Box>
+      <TableContainer component={Paper} sx={{ width: '100%' }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Name</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>ID</TableCell>
+              <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {groups.map((row) => (
+              <TableRow
+                key={row.name}
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.name}
+                </TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.id}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
+                  <Link
+                    component={RouterLink}
+                    to={`/component/${row.id}`}
+                    aria-label="Test Component"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <ScienceIcon />
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </>
+  );
+}

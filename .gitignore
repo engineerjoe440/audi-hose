@@ -1,10 +1,12 @@
 # Database
 config/
-recordings/
+
+# React-Generated Content
 audihose/static/react/
 audihose/templates/index.html
 
 # Audio Files
+recordings/
 *.wav
 *.mp3
 

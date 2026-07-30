@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 from loguru import logger
 
 from . import __header__, __version__, api, authentication
-from .configuration import settings
+from .configuration import settings, validate_configuration
 from .database import (
     DEFAULT_GROUP_ID,
     Account,
@@ -61,6 +61,8 @@ async def lifespan(_: FastAPI):
     """Application Lifespan System."""
     # Setup
     logger.info(__header__)
+    # Validate Configuration (Storage Path, Site URL, etc.)
+    validate_configuration()
     # Connect Database
     create_database_tables()
     # Create Default Submission Group
@@ -79,7 +81,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost",
         "http://localhost:8000", # Uvicorn Default Server
-        "http://example.com",
     ] + settings.application.cross_site_origins,
     allow_credentials=True,
     allow_methods=["*"],

@@ -75,3 +75,14 @@ settings.init_config(
     defaults=DEFAULT_CONFIGURATION,
     config_file_name="app"
 )
+
+def validate_configuration() -> None:
+    """Validate the Configuration Settings."""
+    if not settings.application.site_url:
+        raise ValueError(
+            "Configuration Error: 'application.site_url' must be set."
+        )
+    if not settings.application.storage_path:
+        raise ValueError(
+            "Configuration Error: 'application.storage_path' must be set."
+        )

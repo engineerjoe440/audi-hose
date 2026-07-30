@@ -1,5 +1,5 @@
 import * as React from 'react';
-import AudioDialog from "./components/AudioDialog";
+import RecordingDialog from "./components/RecordingDialog";
 import RecordButton from "./components/RecordButton";
 
 export default function EmbedableRecorder(props) {
@@ -16,7 +16,7 @@ export default function EmbedableRecorder(props) {
         prompt={props.prompt}
         onClick={() => {setOpen(true)}}
       />
-      <AudioDialog
+      <RecordingDialog
         open={open}
         groupId={props.groupId}
         audihoseUrl={props.audihoseUrl}

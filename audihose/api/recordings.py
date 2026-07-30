@@ -8,6 +8,7 @@ Author: Joe Stanley
 """
 ################################################################################
 
+from pathlib import Path
 from typing import Annotated
 from uuid import uuid4
 
@@ -69,7 +70,13 @@ def get_single_recording(
     if recording is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Recording not found.",
+            detail="Record of audio submission not found.",
+        )
+
+    if not Path(recording.file_path).exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Audio file not found.",
         )
 
     def inner_iter():

@@ -18,7 +18,9 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { visuallyHidden } from '@mui/utils';
+import { AudioPlayerDialog } from '../AudioPlayerDialog';
 import { api_client, fetchToken } from '../../auth';
 
 
@@ -204,6 +206,7 @@ export function AdminSubmissionGroup(props) {
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [pubGroup, setPubGroup] = React.useState({});
   const [rows, setRows] = React.useState([]);
+  const [audioId, setAudioId] = React.useState(null);
 
   React.useEffect(()=>{
 
@@ -307,6 +310,8 @@ export function AdminSubmissionGroup(props) {
   );
 
   return (
+    <>
+    <AudioPlayerDialog recordingId={audioId} onClose={() => setAudioId(null)}/>
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2 }}>
         <EnhancedTableToolbar
@@ -362,7 +367,12 @@ export function AdminSubmissionGroup(props) {
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>{row.email}</TableCell>
                     <TableCell>{row.time}</TableCell>
                     <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }}>
-                      <a href={`/recordings/${row.id}`} target="_blank" rel="noopener noreferrer">Play</a>
+                      <IconButton
+                        color="primary"
+                        onClick={(event) => {setAudioId(row.id); event.stopPropagation();}}
+                      >
+                        <PlayArrowIcon />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 );
@@ -390,5 +400,6 @@ export function AdminSubmissionGroup(props) {
         />
       </Paper>
     </Box>
+    </>
   );
 }

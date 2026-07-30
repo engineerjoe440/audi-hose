@@ -6,7 +6,7 @@ import {
 import axios from "axios";
 import { AudioRecorder } from 'react-audio-voice-recorder';
 
-export default function AudioDialog(props) {
+export default function RecordingDialog(props) {
   const audio = document.createElement('audio');
   const [audioBlob, setAudioBlob] = React.useState(null);
 
